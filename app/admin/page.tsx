@@ -284,25 +284,81 @@ function PostEditor({
 }) {
   const [title, setTitle] = useState(initial?.title ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
-  const [content, setContent] = useState(initial?.content ?? "");
   const [published, setPublished] = useState(initial?.published ?? false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  const [blocks, setBlocks] = useState<any[]>(() => {
+    if (initial?.content) {
+      try {
+        const parsed = JSON.parse(initial.content);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        // Fallback for non-JSON content
+      }
+      return [{ type: "paragraph", value: initial.content }];
+    }
+    return [{ type: "paragraph", value: "" }];
+  });
 
   // Auto-generate slug from title when creating new
   useEffect(() => {
     if (!initial) setSlug(slugify(title));
   }, [title, initial]);
 
+  const addBlock = (type: string) => {
+    let newBlock: any = { type };
+    if (type === "paragraph") newBlock.value = "";
+    else if (type === "heading") { newBlock.value = ""; newBlock.level = 2; }
+    else if (type === "image") { newBlock.url = ""; newBlock.caption = ""; }
+    else if (type === "video") { newBlock.url = ""; }
+    else if (type === "list") { newBlock.items = [""]; }
+    else if (type === "poll") { newBlock.question = ""; newBlock.options = ["", ""]; newBlock.votes = [0, 0]; }
+
+    setBlocks([...blocks, newBlock]);
+  };
+
+  const updateBlock = (index: number, updatedFields: any) => {
+    const next = [...blocks];
+    next[index] = { ...next[index], ...updatedFields };
+    setBlocks(next);
+  };
+
+  const deleteBlock = (index: number) => {
+    if (blocks.length <= 1) {
+      alert("Posts must have at least one content block.");
+      return;
+    }
+    setBlocks(blocks.filter((_, i) => i !== index));
+  };
+
+  const moveBlock = (index: number, dir: "up" | "down") => {
+    if (dir === "up" && index === 0) return;
+    if (dir === "down" && index === blocks.length - 1) return;
+    const targetIdx = dir === "up" ? index - 1 : index + 1;
+    const next = [...blocks];
+    const temp = next[index];
+    next[index] = next[targetIdx];
+    next[targetIdx] = temp;
+    setBlocks(next);
+  };
+
   const save = async () => {
+    // Basic validation
+    if (!title.trim()) { setError("Title is required"); return; }
+    if (!slug.trim()) { setError("Slug is required"); return; }
+
     setSaving(true); setError("");
+    const contentString = JSON.stringify(blocks);
     const url = initial ? `/api/blog/${initial.id}` : "/api/blog";
     const method = initial ? "PUT" : "POST";
+    
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json", "x-admin-password": password },
-      body: JSON.stringify({ title, slug, content, published }),
+      body: JSON.stringify({ title, slug, content: contentString, published }),
     });
+    
     const data = await res.json();
     if (!res.ok) { setError(data.error ?? "Save failed"); setSaving(false); return; }
     onSave();
@@ -315,7 +371,7 @@ function PostEditor({
         <button onClick={onCancel} className="text-sm text-[#5A5A66] hover:text-[#003265]">← Back</button>
       </div>
 
-      <div className="space-y-5 rounded-2xl border border-[#E2E8F0] bg-white p-8">
+      <div className="space-y-6 rounded-2xl border border-[#E2E8F0] bg-white p-8">
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Title</label>
           <input
@@ -334,15 +390,233 @@ function PostEditor({
           />
         </div>
 
-        <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">
-            Content <span className="normal-case font-normal">(supports basic HTML)</span>
-          </label>
-          <textarea
-            value={content} onChange={(e) => setContent(e.target.value)}
-            rows={18} placeholder="Write your post content here…"
-            className="w-full rounded-lg border border-[#E2E8F0] px-4 py-3 text-sm text-[#0A0A0F] focus:border-[#003265] focus:outline-none"
-          />
+        {/* --- Block list --- */}
+        <div className="space-y-4">
+          <label className="block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Blog Content Blocks</label>
+          
+          <div className="space-y-4">
+            {blocks.map((block, index) => (
+              <div key={index} className="relative rounded-xl border border-[#E2E8F0] bg-[#F8F7F4] p-4 pt-10">
+                
+                {/* Block header with action buttons */}
+                <div className="absolute top-2 left-4 right-4 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#003265]">
+                    Block {index + 1}: {block.type}
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button" onClick={() => moveBlock(index, "up")} disabled={index === 0}
+                      className="text-xs text-[#5A5A66] hover:text-[#003265] disabled:opacity-30"
+                    >
+                      ▲ Move Up
+                    </button>
+                    <button
+                      type="button" onClick={() => moveBlock(index, "down")} disabled={index === blocks.length - 1}
+                      className="text-xs text-[#5A5A66] hover:text-[#003265] disabled:opacity-30"
+                    >
+                      ▼ Move Down
+                    </button>
+                    <button
+                      type="button" onClick={() => deleteBlock(index)}
+                      className="text-xs text-[#ED1C24] hover:underline"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+
+                {/* Block editor views */}
+                {block.type === "paragraph" && (
+                  <textarea
+                    value={block.value}
+                    onChange={(e) => updateBlock(index, { value: e.target.value })}
+                    placeholder="Write paragraph text..."
+                    rows={4}
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none focus:border-[#003265]"
+                  />
+                )}
+
+                {block.type === "heading" && (
+                  <div className="flex gap-2">
+                    <select
+                      value={block.level ?? 2}
+                      onChange={(e) => updateBlock(index, { level: parseInt(e.target.value) })}
+                      className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0A0A0F] focus:outline-none"
+                    >
+                      <option value={2}>Heading H2</option>
+                      <option value={3}>Heading H3</option>
+                      <option value={4}>Heading H4</option>
+                    </select>
+                    <input
+                      type="text"
+                      value={block.value}
+                      onChange={(e) => updateBlock(index, { value: e.target.value })}
+                      placeholder="Heading text"
+                      className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none focus:border-[#003265]"
+                    />
+                  </div>
+                )}
+
+                {block.type === "image" && (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={block.url ?? ""}
+                      onChange={(e) => updateBlock(index, { url: e.target.value })}
+                      placeholder="Image URL (e.g. https://images.unsplash.com/...)"
+                      className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none focus:border-[#003265]"
+                    />
+                    <input
+                      type="text"
+                      value={block.caption ?? ""}
+                      onChange={(e) => updateBlock(index, { caption: e.target.value })}
+                      placeholder="Image caption (optional)"
+                      className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none focus:border-[#003265]"
+                    />
+                  </div>
+                )}
+
+                {block.type === "video" && (
+                  <input
+                    type="text"
+                    value={block.url ?? ""}
+                    onChange={(e) => updateBlock(index, { url: e.target.value })}
+                    placeholder="Video Embed URL (YouTube/Vimeo embed link or video path)"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none"
+                  />
+                )}
+
+                {block.type === "list" && (
+                  <div className="space-y-2">
+                    {block.items.map((item: string, idx: number) => (
+                      <div key={idx} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={item}
+                          onChange={(e) => {
+                            const newItems = [...block.items];
+                            newItems[idx] = e.target.value;
+                            updateBlock(index, { items: newItems });
+                          }}
+                          placeholder={`List item ${idx + 1}`}
+                          className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newItems = block.items.filter((_: any, i: number) => i !== idx);
+                            updateBlock(index, { items: newItems });
+                          }}
+                          className="text-xs text-[#ED1C24] hover:underline"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => updateBlock(index, { items: [...block.items, ""] })}
+                      className="text-xs font-semibold text-[#003265] hover:underline"
+                    >
+                      + Add Point
+                    </button>
+                  </div>
+                )}
+
+                {block.type === "poll" && (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={block.question ?? ""}
+                      onChange={(e) => updateBlock(index, { question: e.target.value })}
+                      placeholder="Poll Question (e.g. Which topic would you like us to cover next?)"
+                      className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm font-semibold text-[#0A0A0F] focus:outline-none"
+                    />
+                    {block.options.map((opt: string, idx: number) => (
+                      <div key={idx} className="flex gap-2">
+                        <input
+                          type="text"
+                          value={opt}
+                          onChange={(e) => {
+                            const newOpts = [...block.options];
+                            newOpts[idx] = e.target.value;
+                            updateBlock(index, { options: newOpts });
+                          }}
+                          placeholder={`Option ${idx + 1}`}
+                          className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newOpts = block.options.filter((_: any, i: number) => i !== idx);
+                            const newVotes = block.votes.filter((_: any, i: number) => i !== idx);
+                            updateBlock(index, { options: newOpts, votes: newVotes });
+                          }}
+                          className="text-xs text-[#ED1C24] hover:underline"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => updateBlock(index, {
+                        options: [...block.options, ""],
+                        votes: [...block.votes, 0]
+                      })}
+                      className="text-xs font-semibold text-[#003265] hover:underline"
+                    >
+                      + Add Option
+                    </button>
+                  </div>
+                )}
+
+              </div>
+            ))}
+          </div>
+
+          {/* Block Creation Toolbar */}
+          <div className="flex flex-wrap gap-2 rounded-xl border border-[#E2E8F0] bg-[#F8F7F4] p-3">
+            <span className="w-full text-left text-[10px] font-bold uppercase tracking-widest text-[#5A5A66] mb-1">
+              Add Block:
+            </span>
+            <button
+              type="button" onClick={() => addBlock("paragraph")}
+              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
+            >
+              + Text Paragraph
+            </button>
+            <button
+              type="button" onClick={() => addBlock("heading")}
+              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
+            >
+              + Heading
+            </button>
+            <button
+              type="button" onClick={() => addBlock("list")}
+              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
+            >
+              + Bullet Points
+            </button>
+            <button
+              type="button" onClick={() => addBlock("image")}
+              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
+            >
+              + Image
+            </button>
+            <button
+              type="button" onClick={() => addBlock("video")}
+              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
+            >
+              + Video
+            </button>
+            <button
+              type="button" onClick={() => addBlock("poll")}
+              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
+            >
+              + Interactive Poll
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-3">
@@ -373,6 +647,7 @@ function PostEditor({
     </div>
   );
 }
+
 
 // ─── Shared micro-components ──────────────────────────────────────────────────
 function Spinner() {

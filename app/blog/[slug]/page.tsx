@@ -1,14 +1,15 @@
 import { sql } from '@/lib/db';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import BlogPostContent from '@/components/blog-post-content';
 
 export const revalidate = 60;
 
 export default async function PostPage({ params }: { params: { slug: string } }) {
-  let post: { title: string; content: string; created_at: string } | null = null;
+  let post: { title: string; content: string; slug: string; created_at: string } | null = null;
   try {
     const { rows } = await sql`
-      SELECT title, content, created_at
+      SELECT title, content, slug, created_at
       FROM posts WHERE slug = ${params.slug} AND published = true
       LIMIT 1
     `;
@@ -29,13 +30,11 @@ export default async function PostPage({ params }: { params: { slug: string } })
         <p className="mt-3 text-xs text-[#5A5A66]">
           {new Date(post.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
         </p>
-        {/* Render content — supports basic HTML */}
-        <div
-          className="prose prose-slate mt-12 max-w-none text-[#0A0A0F]"
-          style={{ lineHeight: "1.75" }}
-          dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, "<br/>") }}
-        />
+        
+        {/* Rich Block Renderer & Call to Action (CTA) */}
+        <BlogPostContent postSlug={post.slug} rawContent={post.content} />
       </div>
     </main>
   );
 }
+
