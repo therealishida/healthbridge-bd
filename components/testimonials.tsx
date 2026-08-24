@@ -12,10 +12,7 @@ export default function Testimonials() {
     <section id="stories" className="border-t border-line/60 bg-surface/40 py-28 md:py-36">
       <div className="mx-auto max-w-6xl px-6">
         <Reveal>
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-accent">
-            Patient Stories
-          </p>
-          <h2 className="max-w-xl font-display text-3xl font-medium leading-tight text-ink md:text-5xl">
+          <h2 className="max-w-xl font-display text-3xl font-medium leading-tight text-primary md:text-5xl">
             What our patients say
           </h2>
         </Reveal>
@@ -25,7 +22,7 @@ export default function Testimonials() {
             <Reveal key={q.name} delay={(i % 2) * 0.1} className="rounded-2xl border border-line/60 bg-bg p-8">
               <p className="font-display text-lg italic leading-relaxed text-ink">&ldquo;{q.text}&rdquo;</p>
               <div className="mt-6 text-sm">
-                <div className="font-semibold text-ink">{q.name}</div>
+                <div className="font-semibold text-primary">{q.name}</div>
                 <div className="text-ink-muted">{q.loc}</div>
               </div>
             </Reveal>

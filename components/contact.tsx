@@ -5,11 +5,8 @@ export default function Contact() {
     <section id="contact" className="border-t border-line/60 bg-surface/40 py-28 md:py-36">
       <div className="mx-auto max-w-6xl px-6">
         <Reveal>
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-accent">
-            Get In Touch
-          </p>
-          <h2 className="max-w-xl font-display text-3xl font-medium leading-tight text-ink md:text-5xl">
-            Start your journey to better health
+          <h2 className="max-w-xl font-display text-3xl font-medium leading-tight text-primary md:text-5xl">
+            Start your medical journey
           </h2>
           <p className="mt-4 max-w-md text-ink-muted">
             A dedicated coordinator will respond with clear next steps, in Bangla or English.
@@ -30,8 +27,8 @@ export default function Contact() {
               <div className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Email</div>
               <p className="mt-2 text-sm text-ink">info@healthbridge-tgv.com</p>
             </div>
-            <div className="rounded-xl border border-alert/30 bg-alert/10 p-6">
-              <p className="text-sm font-medium text-alert">Urgent medical need? Call or WhatsApp directly — skip the form.</p>
+            <div className="rounded-xl border border-alert-orange/30 bg-alert-orange/10 p-6">
+              <p className="text-sm font-medium text-alert-orange">Urgent medical need? Call or WhatsApp directly — skip the form.</p>
             </div>
           </Reveal>
 

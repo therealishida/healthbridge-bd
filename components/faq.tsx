@@ -13,10 +13,7 @@ export default function Faq() {
     <section id="faq" className="border-t border-line/60 bg-bg py-28 md:py-36">
       <div className="mx-auto max-w-3xl px-6">
         <Reveal>
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-accent">
-            Common Questions
-          </p>
-          <h2 className="font-display text-3xl font-medium leading-tight text-ink md:text-5xl">
+          <h2 className="font-display text-3xl font-medium leading-tight text-primary md:text-5xl">
             Frequently asked questions
           </h2>
         </Reveal>
@@ -27,7 +24,7 @@ export default function Faq() {
               <details className="group py-6">
                 <summary className="flex cursor-pointer list-none items-center justify-between text-[15px] font-medium text-ink">
                   {f.q}
-                  <span className="ml-6 text-accent transition-transform group-open:rotate-45">+</span>
+                  <span className="ml-6 text-primary transition-transform group-open:rotate-45">+</span>
                 </summary>
                 <p className="mt-3 max-w-xl text-sm leading-relaxed text-ink-muted">{f.a}</p>
               </details>

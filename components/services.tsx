@@ -14,10 +14,7 @@ export default function Services() {
     <section id="services" className="border-t border-line/60 bg-surface/40 py-28 md:py-36">
       <div className="mx-auto max-w-6xl px-6">
         <Reveal>
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-accent">
-            What We Coordinate
-          </p>
-          <h2 className="max-w-xl font-display text-3xl font-medium leading-tight text-ink md:text-5xl">
+          <h2 className="max-w-xl font-display text-3xl font-medium leading-tight text-primary md:text-5xl">
             End-to-end medical travel support
           </h2>
         </Reveal>
@@ -27,7 +24,7 @@ export default function Services() {
             <Reveal key={s.title} delay={(i % 3) * 0.08} className="group bg-bg p-8 transition-colors hover:bg-surface">
               <h3 className="font-display text-xl text-ink">{s.title}</h3>
               <p className="mt-3 text-sm leading-relaxed text-ink-muted">{s.text}</p>
-              <a href="#contact" className="mt-5 inline-block text-sm font-medium text-accent">
+              <a href="#contact" className="mt-5 inline-block text-sm font-medium text-primary">
                 Learn more →
               </a>
             </Reveal>

@@ -24,17 +24,7 @@ export default function Hero() {
       <div className="absolute inset-0 bg-bg/50" />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6">
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-6 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-primary"
-        >
-          <span className="h-px w-6 bg-primary" />
-          Bangladesh &nbsp;→&nbsp; Bangkok, Thailand
-        </motion.p>
-
-        <h1 className="max-w-4xl font-display text-[40px] font-medium leading-[1.05] tracking-tightest text-ink md:text-[88px]">
+        <h1 className="max-w-4xl font-display text-[40px] font-medium leading-[1.05] tracking-tightest text-primary md:text-[88px]">
           {words.map((w, i) => (
             <motion.span
               key={i}
