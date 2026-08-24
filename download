@@ -8,12 +8,12 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#0A0E14",
-        surface: "#12161F",
-        "surface-2": "#181D28",
-        line: "#242A36",
-        ink: "#F3F5F7",
-        "ink-muted": "#8D96A6",
+        bg: "#FFFFFF",
+        surface: "#F3F5F7",
+        "surface-2": "#E2E8F0",
+        line: "#E2E8F0",
+        ink: "#0A0E14",
+        "ink-muted": "#4A5568",
         blue: {
           DEFAULT: "#1C6FD1",
           deep: "#0A3E7A",
