@@ -7,6 +7,7 @@ const links = [
   { href: "#services", label: "Services" },
   { href: "#hospitals", label: "Hospitals" },
   { href: "#stories", label: "Stories" },
+  { href: "/blog", label: "Blog" },
   { href: "#contact", label: "Contact" },
 ];
 
@@ -17,10 +18,10 @@ export default function Nav() {
     <header className="fixed top-0 z-50 w-full border-b border-line/60 bg-bg/70 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <a href="#" className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-gradient-to-br from-blue to-blue-deep">
+          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M3 17c2-4 5-6 9-6s7 2 9 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-              <path d="M6 17V9M18 17V9" stroke="#22E06B" strokeWidth="2" strokeLinecap="round" />
+              <path d="M6 17V9M18 17V9" stroke="#00B02A" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </span>
           <span className="font-display text-lg tracking-tight text-ink">HealthBridge</span>
