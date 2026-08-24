@@ -262,6 +262,16 @@ function BlogTab({ password }: { password: string }) {
                 >
                   {p.published ? "Published" : "Draft"}
                 </button>
+                {p.published && (
+                  <a
+                    href={`/blog/${p.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-semibold text-[#003265] underline hover:opacity-70"
+                  >
+                    View Live ↗
+                  </a>
+                )}
                 <button onClick={() => setEditing(p)} className="text-xs text-[#5A5A66] underline hover:text-[#003265]">Edit</button>
                 <button onClick={() => deletePost(p.id)} className="text-xs text-[#ED1C24] hover:underline">Delete</button>
               </div>
@@ -466,6 +476,26 @@ function PostEditor({
                       placeholder="Image URL (e.g. https://images.unsplash.com/...)"
                       className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none focus:border-[#003265]"
                     />
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-[#5A5A66]">— or upload —</span>
+                      <label className="cursor-pointer rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]">
+                        📁 Choose File
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const objectUrl = URL.createObjectURL(file);
+                            updateBlock(index, { url: objectUrl, _file: file });
+                          }}
+                        />
+                      </label>
+                      {block.url && (
+                        <img src={block.url} alt="preview" className="h-10 w-14 rounded object-cover border border-[#E2E8F0]" />
+                      )}
+                    </div>
                     <input
                       type="text"
                       value={block.caption ?? ""}
@@ -477,13 +507,32 @@ function PostEditor({
                 )}
 
                 {block.type === "video" && (
-                  <input
-                    type="text"
-                    value={block.url ?? ""}
-                    onChange={(e) => updateBlock(index, { url: e.target.value })}
-                    placeholder="Video Embed URL (YouTube/Vimeo embed link or video path)"
-                    className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none"
-                  />
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={block.url ?? ""}
+                      onChange={(e) => updateBlock(index, { url: e.target.value })}
+                      placeholder="Video Embed URL (YouTube/Vimeo embed link or video path)"
+                      className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none"
+                    />
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-[#5A5A66]">— or upload video file —</span>
+                      <label className="cursor-pointer rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]">
+                        🎬 Choose Video
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="sr-only"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const objectUrl = URL.createObjectURL(file);
+                            updateBlock(index, { url: objectUrl, _file: file });
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
                 )}
 
                 {block.type === "list" && (
@@ -620,14 +669,18 @@ function PostEditor({
         </div>
 
         <div className="flex items-center gap-3">
+          <span className="text-sm text-[#5A5A66]">Status:</span>
           <button
             type="button"
             onClick={() => setPublished((v) => !v)}
-            className={`relative h-6 w-11 rounded-full transition-colors ${published ? "bg-[#00B02A]" : "bg-[#E2E8F0]"}`}
+            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
+              published
+                ? "bg-[#00B02A]/10 text-[#00B02A] border border-[#00B02A]/30"
+                : "bg-[#E2E8F0] text-[#5A5A66] border border-[#E2E8F0] hover:border-[#003265]"
+            }`}
           >
-            <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${published ? "translate-x-5" : "translate-x-0.5"}`} />
+            {published ? "✓ Published" : "Draft"}
           </button>
-          <span className="text-sm text-[#5A5A66]">{published ? "Published" : "Draft"}</span>
         </div>
 
         {error && <p className="text-sm text-[#ED1C24]">{error}</p>}

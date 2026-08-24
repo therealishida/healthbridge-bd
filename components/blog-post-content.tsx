@@ -183,14 +183,33 @@ function PollWidget({
     }
   }, [pollKey]);
 
-  const handleVote = (index: number) => {
+  const handleVote = async (index: number) => {
     if (hasVoted) return;
+    
+    // Optimistic update in UI
     const nextVotes = [...votes];
     nextVotes[index] = (nextVotes[index] ?? 0) + 1;
     setVotes(nextVotes);
     setSelectedOption(index);
     setHasVoted(true);
     localStorage.setItem(pollKey, index.toString());
+
+    // Persist vote to database via API
+    try {
+      const res = await fetch("/api/blog/vote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ postSlug, blockIndex, optionIndex: index }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.votes) {
+          setVotes(data.votes);
+        }
+      }
+    } catch (err) {
+      console.error("Error casting vote:", err);
+    }
   };
 
   const totalVotes = votes.reduce((a, b) => a + b, 0);

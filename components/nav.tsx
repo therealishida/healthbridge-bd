@@ -17,7 +17,7 @@ export default function Nav() {
   return (
     <header className="fixed top-0 z-50 w-full border-b border-line/60 bg-bg/70 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <a href="#" className="flex items-center gap-2.5">
+        <a href="/" className="flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-md bg-primary">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M3 17c2-4 5-6 9-6s7 2 9 6" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
