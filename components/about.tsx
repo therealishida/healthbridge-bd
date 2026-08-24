@@ -33,8 +33,7 @@ export default function About() {
             Your bridge to international healthcare
           </h2>
           <p className="mt-6 max-w-xl text-ink-muted">
-            HealthBridge is a Bangladesh-based medical tourism and
-            patient-facilitation service. We don&apos;t replace doctors or make
+            Healthbridge is a premium cross-border healthcare facilitation service. We don&apos;t replace doctors or make
             clinical decisions — we handle everything around the treatment,
             so your family can focus on the care itself.
           </p>

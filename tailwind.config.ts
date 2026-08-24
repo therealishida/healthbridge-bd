@@ -8,19 +8,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#FFFFFF",
-        surface: "#F3F5F7",
+        bg: "#F8F7F4",
+        surface: "#FFFFFF",
         "surface-2": "#E2E8F0",
         line: "#E2E8F0",
-        ink: "#0A0E14",
-        "ink-muted": "#4A5568",
-        blue: {
-          DEFAULT: "#1C6FD1",
-          deep: "#0A3E7A",
-          soft: "#0F2A4D",
-        },
-        accent: "#22E06B",
-        alert: "#FF3B3B",
+        ink: "#0A0A0F",
+        "ink-muted": "#5A5A66",
+        primary: "#003265",
+        accent: "#00B02A",
+        alert: {
+          orange: "#F26522",
+          red: "#ED1C24"
+        }
       },
       fontFamily: {
         display: ["var(--font-fraunces)", "serif"],
