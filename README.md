@@ -1,88 +1,38 @@
-"use client";
+# HealthBridge — Premium Site
 
-import { motion } from "motion/react";
+Built with Next.js (App Router), Tailwind CSS, and the Motion library, following
+the premium-agency guidelines in CLAUDE.md: dark editorial theme, one accent
+color, subtle scroll-triggered motion, single CTA in the hero.
 
-const headline = "World-class care, one coordinator away";
-const words = headline.split(" ");
+## Run it locally
 
-export default function Hero() {
-  return (
-    <section className="relative flex h-screen items-center overflow-hidden bg-bg">
-      {/* animated gradient field — stands in for a hero video */}
-      <div className="absolute inset-0">
-        <motion.div
-          className="absolute -left-1/4 -top-1/4 h-[70%] w-[70%] rounded-full bg-blue-soft blur-[120px]"
-          animate={{ x: [0, 40, 0], y: [0, 30, 0] }}
-          transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute -bottom-1/4 -right-1/4 h-[60%] w-[60%] rounded-full bg-accent/10 blur-[140px]"
-          animate={{ x: [0, -30, 0], y: [0, -20, 0] }}
-          transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
-      <div className="absolute inset-0 bg-bg/30" />
+1. Install Node.js 18+ if you don't have it (nodejs.org).
+2. Open this folder in a terminal.
+3. Install dependencies (downloads the packages the project needs):
+   ```
+   npm install
+   ```
+4. Start the local preview server:
+   ```
+   npm run dev
+   ```
+5. Open http://localhost:3000 in your browser.
 
-      <div className="relative z-10 mx-auto w-full max-w-6xl px-6">
-        <motion.p
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-6 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-accent"
-        >
-          <span className="h-px w-6 bg-accent" />
-          Bangladesh &nbsp;→&nbsp; Bangkok, Thailand
-        </motion.p>
+## What's inside
 
-        <h1 className="max-w-4xl font-display text-[40px] font-medium leading-[1.05] tracking-tightest text-ink md:text-[88px]">
-          {words.map((w, i) => (
-            <motion.span
-              key={i}
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.15 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-              className="mr-4 inline-block"
-            >
-              {w}
-            </motion.span>
-          ))}
-        </h1>
+- `app/` — the page shell, global styles, and font loading (Fraunces for
+  display headings, Inter for body text — an editorial pairing).
+- `components/` — one file per section (hero, about, services, hospitals,
+  testimonials, faq, contact, footer, nav).
+- `tailwind.config.ts` — the color tokens: `bg`, `surface`, `ink`, `accent`
+  (#22E06B), `blue` (#1C6FD1 family), and `alert` (#FF3B3B, used only for the
+  urgent-contact note).
 
-        <motion.p
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.7 }}
-          className="mt-8 max-w-xl text-lg text-ink-muted"
-        >
-          HealthBridge, by TradeAxis Global Ventures, connects Bangladeshi
-          patients with Bangkok&apos;s leading hospitals — and keeps one
-          dedicated coordinator beside your family from first enquiry through
-          recovery.
-        </motion.p>
+## Notes
 
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 0.85 }}
-          className="mt-10"
-        >
-          <a
-            href="#contact"
-            className="inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3.5 text-sm font-semibold text-bg transition-transform hover:-translate-y-0.5"
-          >
-            Book a Free Consultation
-          </a>
-        </motion.div>
-      </div>
-
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.4, duration: 0.8 }}
-        className="absolute bottom-10 left-1/2 -translate-x-1/2 text-xs tracking-[0.2em] text-ink-muted"
-      >
-        SCROLL
-      </motion.div>
-    </section>
-  );
-}
+- The hero uses an animated gradient instead of a video — swap in a real
+  video by dropping an `.mp4` into `public/` and following the video-hero
+  pattern from CLAUDE.md.
+- All motion respects `prefers-reduced-motion` and only animates once per
+  scroll (`viewport={{ once: true }}`).
+- Deploy with `vercel` (free tier) once you're happy with it locally.
