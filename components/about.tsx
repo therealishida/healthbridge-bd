@@ -1,5 +1,5 @@
 import Image from "next/image";
-import logoImg from "@/brandassets/HealthBridge Logo.png";
+import logoImg from "@/brandassets/logo-cropped.png";
 import Reveal from "./ui/reveal";
 
 export default function About() {

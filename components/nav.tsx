@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import logoImg from "@/brandassets/HealthBridge Logo.png";
+import logoImg from "@/brandassets/logo-cropped.png";
 
 const links = [
   { href: "#about", label: "About" },
