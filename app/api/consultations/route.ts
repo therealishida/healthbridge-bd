@@ -59,13 +59,13 @@ export async function POST(req: NextRequest) {
       await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
-          'Authorization': \`Bearer \${resendApiKey}\`,
+          'Authorization': `Bearer ${resendApiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           from: 'HealthBridge <noreply@healthbridge-tgv.com>',
           to: [toEmail],
-          subject: \`New Consultation Request: \${name}\`,
+          subject: `New Consultation Request: ${name}`,
           html: htmlContent,
           attachments: [
             {
