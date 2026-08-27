@@ -61,33 +61,25 @@ export default function Contact() {
     <section id="contact" className="border-t border-line/60 bg-surface/40 py-28 md:py-36">
       <div className="mx-auto max-w-6xl px-6">
         <Reveal>
-          <h2 className="max-w-xl font-display text-3xl font-medium leading-tight text-primary md:text-5xl">
-            Book a Consultation
-          </h2>
-          <p className="mt-4 max-w-2xl text-ink-muted">
-            Provide your details below and a dedicated coordinator will respond with clear next steps.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+              <h2 className="max-w-xl font-display text-3xl font-medium leading-tight text-primary md:text-5xl">
+                Book a Consultation
+              </h2>
+              <p className="mt-4 max-w-2xl text-ink-muted">
+                Provide your details below and a dedicated coordinator will respond with clear next steps.
+              </p>
+            </div>
+            <div className="rounded-xl border border-alert-orange/30 bg-alert-orange/10 p-5 max-w-sm">
+              <p className="text-sm font-medium text-alert-orange leading-snug">
+                Urgent medical need? <br className="hidden md:block" />
+                <span className="font-bold">Call or WhatsApp +66 65 162 7555</span> directly — skip the form entirely.
+              </p>
+            </div>
+          </div>
         </Reveal>
 
-        <div className="mt-16 grid grid-cols-1 gap-10 lg:grid-cols-[0.3fr_0.7fr]">
-          <Reveal className="space-y-4">
-            <div className="rounded-xl border border-line/60 bg-bg p-6">
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Office</div>
-              <p className="mt-2 text-sm text-ink">10 Soi Sukhumvit 13, Khlong Toei Nuea, Watthana District, Bangkok 10110, Thailand</p>
-            </div>
-            <div className="rounded-xl border border-line/60 bg-bg p-6">
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Phone</div>
-              <p className="mt-2 text-sm text-ink">+66 65 162 7555</p>
-            </div>
-            <div className="rounded-xl border border-line/60 bg-bg p-6">
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Email</div>
-              <p className="mt-2 text-sm text-ink">info@healthbridge-tgv.com</p>
-            </div>
-            <div className="rounded-xl border border-alert-orange/30 bg-alert-orange/10 p-6">
-              <p className="text-sm font-medium text-alert-orange">Urgent medical need? Call or WhatsApp directly — skip the form.</p>
-            </div>
-          </Reveal>
-
+        <div className="mt-12 mx-auto max-w-4xl">
           <Reveal delay={0.1}>
             {status === "success" ? (
               <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-2xl border border-accent/30 bg-bg p-8 text-center">

@@ -10,10 +10,11 @@ export async function POST(req: NextRequest) {
       assistance, message, consent_accuracy, consent_processing, consent_terms 
     } = await req.json();
 
-    if (!name || !phone || !email || !dob || !gender || !specialty || !condition || !medical_reports || !passport_copy || !consent_accuracy || !consent_processing || !consent_terms) {
+    if (!name || !phone || !email || !dob || !gender || !specialty || !condition || !medical_reports || !passport_copy) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    // 1. Save text details to database (skip large base64 files to avoid bloat)
     await sql`
       INSERT INTO consultations (
         name, phone, whatsapp, email, dob, gender, specialty, condition, 
@@ -22,10 +23,63 @@ export async function POST(req: NextRequest) {
       )
       VALUES (
         ${name}, ${phone}, ${whatsapp ?? ''}, ${email}, ${dob}, ${gender}, ${specialty}, ${condition}, 
-        ${destination ?? ''}, ${hospital_pref ?? ''}, ${medical_reports}, ${passport_copy}, 
+        ${destination ?? ''}, ${hospital_pref ?? ''}, NULL, NULL, 
         ${JSON.stringify(assistance ?? [])}, ${message ?? ''}, ${consent_accuracy}, ${consent_processing}, ${consent_terms}
       )
     `;
+
+    // 2. Send Email via Resend if API key is configured
+    const resendApiKey = process.env.RESEND_API_KEY;
+    const toEmail = process.env.NOTIFICATION_EMAIL || 'info@healthbridge-tgv.com';
+
+    if (resendApiKey) {
+      // Extract pure base64 content from data URIs
+      const reportB64 = medical_reports.split(',')[1] || medical_reports;
+      const passportB64 = passport_copy.split(',')[1] || passport_copy;
+
+      const htmlContent = `
+        <h2>New Patient Consultation Request</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>DOB:</strong> ${dob} | <strong>Gender:</strong> ${gender}</p>
+        <p><strong>Phone:</strong> ${phone} | <strong>WhatsApp:</strong> ${whatsapp}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <hr/>
+        <h3>Medical Information</h3>
+        <p><strong>Specialty:</strong> ${specialty}</p>
+        <p><strong>Condition:</strong> ${condition}</p>
+        <p><strong>Preferred Destination:</strong> ${destination || 'None'}</p>
+        <p><strong>Preferred Hospital:</strong> ${hospital_pref || 'None'}</p>
+        <hr/>
+        <h3>Assistance Required</h3>
+        <p>${assistance?.length ? assistance.join(', ') : 'None'}</p>
+        <hr/>
+        <p><strong>Message:</strong> ${message || 'None'}</p>
+      `;
+
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': \`Bearer \${resendApiKey}\`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'HealthBridge <noreply@healthbridge-tgv.com>',
+          to: [toEmail],
+          subject: \`New Consultation Request: \${name}\`,
+          html: htmlContent,
+          attachments: [
+            {
+              filename: 'Medical_Reports.pdf',
+              content: reportB64
+            },
+            {
+              filename: 'Passport_Copy.pdf',
+              content: passportB64
+            }
+          ]
+        })
+      });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {
