@@ -1,13 +1,52 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Reveal from "./ui/reveal";
 
-const quotes = [
-  { text: "The coordination from Dhaka to Bangkok was seamless. My father received excellent cardiac care, and the team handled every detail.", name: "Rahim Uddin", loc: "Bangladesh · Bumrungrad International Hospital" },
-  { text: "Second opinion service saved us from an unnecessary surgery back home. The doctors were thorough and explained everything clearly.", name: "Fatema Begum", loc: "Bangladesh · Samitivej Hospital" },
-  { text: "Professional service throughout my knee replacement journey. Recovery support after discharge was better than I expected.", name: "John Carter", loc: "United Kingdom · Bangkok Hospital" },
-  { text: "We came for IVF treatment and the entire process, medical and non-medical, was handled with care.", name: "Nasrin Akter", loc: "Bangladesh · Bumrungrad International Hospital" },
-];
+type Testimonial = {
+  id: number;
+  quote: string;
+  name: string;
+  location: string;
+};
 
 export default function Testimonials() {
+  const [visible, setVisible] = useState(true);
+  const [quotes, setQuotes] = useState<Testimonial[]>([]);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        // Check section visibility setting
+        const settRes = await fetch("/api/settings?key=testimonials_visible");
+        const settData = await settRes.json();
+        if (settData.value === "false") {
+          setVisible(false);
+          setLoaded(true);
+          return;
+        }
+        // Fetch testimonial entries
+        const res = await fetch("/api/testimonials");
+        const data = await res.json();
+        setQuotes(Array.isArray(data) ? data : []);
+      } catch {
+        // Silently fall back to hidden on error
+        setQuotes([]);
+      } finally {
+        setLoaded(true);
+      }
+    }
+    load();
+  }, []);
+
+  // Don't render until loaded (avoid flash)
+  if (!loaded) return null;
+  // Section toggled off by admin
+  if (!visible) return null;
+  // No entries yet
+  if (quotes.length === 0) return null;
+
   return (
     <section id="stories" className="border-t border-line/60 bg-surface/40 py-28 md:py-36">
       <div className="mx-auto max-w-6xl px-6">
@@ -19,11 +58,11 @@ export default function Testimonials() {
 
         <div className="mt-16 grid grid-cols-1 gap-6 md:grid-cols-2">
           {quotes.map((q, i) => (
-            <Reveal key={q.name} delay={(i % 2) * 0.1} className="rounded-2xl border border-line/60 bg-bg p-8">
-              <p className="font-display text-lg italic leading-relaxed text-ink">&ldquo;{q.text}&rdquo;</p>
+            <Reveal key={q.id} delay={(i % 2) * 0.1} className="rounded-2xl border border-line/60 bg-bg p-8">
+              <p className="font-display text-lg italic leading-relaxed text-ink">&ldquo;{q.quote}&rdquo;</p>
               <div className="mt-6 text-sm">
                 <div className="font-semibold text-primary">{q.name}</div>
-                <div className="text-ink-muted">{q.loc}</div>
+                <div className="text-ink-muted">{q.location}</div>
               </div>
             </Reveal>
           ))}

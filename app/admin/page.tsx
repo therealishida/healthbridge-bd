@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 type Submission = {
   id: number; name: string; phone: string; whatsapp: string;
   email: string; condition: string; message: string; created_at: string;
@@ -11,8 +11,21 @@ type Post = {
   id: number; title: string; slug: string; content: string;
   published: boolean; created_at: string; updated_at: string;
 };
+type Testimonial = {
+  id: number; quote: string; name: string; location: string;
+  enabled: boolean; sort_order: number; created_at: string;
+};
+type Hospital = {
+  id: number; name: string; location: string; description: string;
+  image_url: string; country_tag: string; tags: string[];
+  enabled: boolean; sort_order: number; created_at: string;
+};
+type Service = {
+  id: number; title: string; description: string;
+  enabled: boolean; sort_order: number; created_at: string;
+};
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 function slugify(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
@@ -33,7 +46,6 @@ export default function AdminPage() {
 
   const login = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Quick check — hit the API
     const res = await fetch("/api/consultations", { headers: { "x-admin-password": password } });
     if (res.ok) {
       sessionStorage.setItem("hb_admin_pw", password);
@@ -80,12 +92,21 @@ function PasswordGate({ onSubmit, pw, setPw, error }: {
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
+type Tab = "general" | "consultations" | "blog" | "hospitals" | "services";
+
 function Dashboard({ password, onLogout }: { password: string; onLogout: () => void }) {
-  const [tab, setTab] = useState<"consultations" | "blog">("consultations");
+  const [tab, setTab] = useState<Tab>("general");
+
+  const tabs: { id: Tab; label: string }[] = [
+    { id: "general",       label: "General" },
+    { id: "consultations", label: "Consultations" },
+    { id: "blog",          label: "Blog Posts" },
+    { id: "hospitals",     label: "Hospitals" },
+    { id: "services",      label: "Services" },
+  ];
 
   return (
     <div className="min-h-screen bg-[#F8F7F4]">
-      {/* Header */}
       <header className="border-b border-[#E2E8F0] bg-white">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-2">
@@ -101,22 +122,508 @@ function Dashboard({ password, onLogout }: { password: string; onLogout: () => v
             Sign out
           </button>
         </div>
-        <div className="mx-auto flex max-w-6xl gap-6 px-6">
-          {(["consultations", "blog"] as const).map((t) => (
+        <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-6">
+          {tabs.map((t) => (
             <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`border-b-2 py-3 text-sm font-medium capitalize transition-colors ${tab === t ? "border-[#003265] text-[#003265]" : "border-transparent text-[#5A5A66] hover:text-[#003265]"}`}
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`shrink-0 border-b-2 px-4 py-3 text-sm font-medium transition-colors ${tab === t.id ? "border-[#003265] text-[#003265]" : "border-transparent text-[#5A5A66] hover:text-[#003265]"}`}
             >
-              {t === "consultations" ? "Consultation Requests" : "Blog Posts"}
+              {t.label}
             </button>
           ))}
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-10">
-        {tab === "consultations" ? <ConsultationsTab password={password} /> : <BlogTab password={password} />}
+        {tab === "general"       && <GeneralTab password={password} />}
+        {tab === "consultations" && <ConsultationsTab password={password} />}
+        {tab === "blog"          && <BlogTab password={password} />}
+        {tab === "hospitals"     && <HospitalsTab password={password} />}
+        {tab === "services"      && <ServicesTab password={password} />}
       </main>
+    </div>
+  );
+}
+
+// ─── General Tab ──────────────────────────────────────────────────────────────
+function GeneralTab({ password }: { password: string }) {
+  const [testimonialsVisible, setTestimonialsVisible] = useState(true);
+  const [settingLoading, setSettingLoading] = useState(true);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+  const [tLoading, setTLoading] = useState(true);
+  const [editingT, setEditingT] = useState<Testimonial | null>(null);
+  const [creatingT, setCreatingT] = useState(false);
+  const [savingT, setSavingT] = useState(false);
+
+  // Form state
+  const [tQuote, setTQuote] = useState("");
+  const [tName, setTName] = useState("");
+  const [tLocation, setTLocation] = useState("");
+
+  const loadSetting = useCallback(async () => {
+    setSettingLoading(true);
+    const res = await fetch("/api/settings?key=testimonials_visible", { headers: { "x-admin-password": password } });
+    const data = await res.json();
+    setTestimonialsVisible(data.value !== "false");
+    setSettingLoading(false);
+  }, [password]);
+
+  const loadTestimonials = useCallback(async () => {
+    setTLoading(true);
+    const res = await fetch("/api/testimonials", { headers: { "x-admin-password": password } });
+    const data = await res.json();
+    setTestimonials(Array.isArray(data) ? data : []);
+    setTLoading(false);
+  }, [password]);
+
+  useEffect(() => { loadSetting(); loadTestimonials(); }, [loadSetting, loadTestimonials]);
+
+  const toggleSection = async () => {
+    const next = !testimonialsVisible;
+    setTestimonialsVisible(next);
+    await fetch("/api/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-password": password },
+      body: JSON.stringify({ key: "testimonials_visible", value: String(next) }),
+    });
+  };
+
+  const openCreate = () => { setTQuote(""); setTName(""); setTLocation(""); setEditingT(null); setCreatingT(true); };
+  const openEdit = (t: Testimonial) => { setTQuote(t.quote); setTName(t.name); setTLocation(t.location); setEditingT(t); setCreatingT(false); };
+  const cancelForm = () => { setCreatingT(false); setEditingT(null); };
+
+  const saveTestimonial = async () => {
+    if (!tQuote.trim() || !tName.trim() || !tLocation.trim()) return;
+    setSavingT(true);
+    const body = { quote: tQuote, name: tName, location: tLocation, enabled: true, sort_order: testimonials.length };
+    if (editingT) {
+      await fetch(`/api/testimonials/${editingT.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify({ ...body, enabled: editingT.enabled }),
+      });
+    } else {
+      await fetch("/api/testimonials", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify(body),
+      });
+    }
+    setSavingT(false);
+    cancelForm();
+    loadTestimonials();
+  };
+
+  const toggleTestimonial = async (t: Testimonial) => {
+    await fetch(`/api/testimonials/${t.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-password": password },
+      body: JSON.stringify({ ...t, enabled: !t.enabled }),
+    });
+    loadTestimonials();
+  };
+
+  const deleteTestimonial = async (id: number) => {
+    if (!confirm("Delete this testimonial?")) return;
+    await fetch(`/api/testimonials/${id}`, { method: "DELETE", headers: { "x-admin-password": password } });
+    loadTestimonials();
+  };
+
+  return (
+    <div className="space-y-10">
+      {/* Section Toggle */}
+      <div className="rounded-2xl border border-[#E2E8F0] bg-white p-7">
+        <h3 className="mb-1 font-semibold text-[#003265]">Testimonials Section</h3>
+        <p className="mb-6 text-sm text-[#5A5A66]">Toggle the entire "What Our Patients Say" section on the homepage.</p>
+        {settingLoading ? <Spinner /> : (
+          <div className="flex items-center gap-4">
+            <button
+              onClick={toggleSection}
+              className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${testimonialsVisible ? "bg-[#00B02A]" : "bg-[#E2E8F0]"}`}
+              role="switch"
+              aria-checked={testimonialsVisible}
+            >
+              <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${testimonialsVisible ? "translate-x-5" : "translate-x-0"}`} />
+            </button>
+            <span className="text-sm font-medium text-[#0A0A0F]">
+              {testimonialsVisible ? "Section is visible" : "Section is hidden"}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Testimonials CRUD */}
+      <div className="rounded-2xl border border-[#E2E8F0] bg-white p-7">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-[#003265]">Patient Testimonials</h3>
+            <p className="mt-0.5 text-sm text-[#5A5A66]">{testimonials.length} testimonial{testimonials.length !== 1 ? "s" : ""}</p>
+          </div>
+          {!creatingT && !editingT && (
+            <button onClick={openCreate} className="rounded-full bg-[#003265] px-5 py-2 text-sm font-semibold text-white hover:opacity-90">
+              + Add Testimonial
+            </button>
+          )}
+        </div>
+
+        {/* Inline form */}
+        {(creatingT || editingT) && (
+          <div className="mb-6 rounded-xl border border-[#E2E8F0] bg-[#F8F7F4] p-6 space-y-4">
+            <h4 className="text-sm font-semibold text-[#003265]">{editingT ? "Edit Testimonial" : "New Testimonial"}</h4>
+            <textarea
+              value={tQuote} onChange={(e) => setTQuote(e.target.value)}
+              placeholder="Patient quote…"
+              rows={3}
+              className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:border-[#003265] focus:outline-none"
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <input value={tName} onChange={(e) => setTName(e.target.value)} placeholder="Patient name" className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:border-[#003265] focus:outline-none" />
+              <input value={tLocation} onChange={(e) => setTLocation(e.target.value)} placeholder="Location & Hospital (e.g. Bangladesh · Bumrungrad)" className="rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:border-[#003265] focus:outline-none" />
+            </div>
+            <div className="flex gap-3">
+              <button onClick={saveTestimonial} disabled={savingT} className="rounded-full bg-[#003265] px-5 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
+                {savingT ? "Saving…" : "Save"}
+              </button>
+              <button onClick={cancelForm} className="rounded-full border border-[#E2E8F0] px-5 py-2 text-sm text-[#5A5A66] hover:border-[#003265]">Cancel</button>
+            </div>
+          </div>
+        )}
+
+        {tLoading ? <Spinner /> : testimonials.length === 0 ? <Empty text="No testimonials yet. Add the first one." /> : (
+          <div className="space-y-3">
+            {testimonials.map((t) => (
+              <div key={t.id} className="flex items-start justify-between gap-4 rounded-xl border border-[#E2E8F0] bg-[#F8F7F4] p-5">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm italic text-[#0A0A0F] line-clamp-2">&ldquo;{t.quote}&rdquo;</p>
+                  <p className="mt-1 text-xs text-[#5A5A66]">{t.name} · {t.location}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <button onClick={() => toggleTestimonial(t)} className={`rounded-full px-3 py-1 text-xs font-semibold ${t.enabled ? "bg-[#00B02A]/10 text-[#00B02A]" : "bg-[#E2E8F0] text-[#5A5A66]"}`}>
+                    {t.enabled ? "Visible" : "Hidden"}
+                  </button>
+                  <button onClick={() => openEdit(t)} className="text-xs text-[#5A5A66] underline hover:text-[#003265]">Edit</button>
+                  <button onClick={() => deleteTestimonial(t.id)} className="text-xs text-[#ED1C24] hover:underline">Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Hospitals Tab ─────────────────────────────────────────────────────────────
+function HospitalsTab({ password }: { password: string }) {
+  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Hospital | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Form state
+  const [hName, setHName] = useState("");
+  const [hLocation, setHLocation] = useState("");
+  const [hCountry, setHCountry] = useState("");
+  const [hDesc, setHDesc] = useState("");
+  const [hImage, setHImage] = useState("");
+  const [hTags, setHTags] = useState(""); // comma-separated
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch("/api/hospitals", { headers: { "x-admin-password": password } });
+    const data = await res.json();
+    setHospitals(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, [password]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const resetForm = () => { setHName(""); setHLocation(""); setHCountry(""); setHDesc(""); setHImage(""); setHTags(""); };
+
+  const openCreate = () => { resetForm(); setEditing(null); setCreating(true); };
+  const openEdit = (h: Hospital) => {
+    setHName(h.name); setHLocation(h.location); setHCountry(h.country_tag);
+    setHDesc(h.description ?? ""); setHImage(h.image_url ?? "");
+    setHTags(Array.isArray(h.tags) ? h.tags.join(", ") : "");
+    setEditing(h); setCreating(false);
+  };
+  const cancelForm = () => { setCreating(false); setEditing(null); };
+
+  const save = async () => {
+    if (!hName.trim() || !hLocation.trim() || !hCountry.trim()) return;
+    setSaving(true);
+    const body = { name: hName, location: hLocation, country_tag: hCountry, description: hDesc, image_url: hImage, tags: hTags, enabled: true, sort_order: hospitals.length };
+    if (editing) {
+      await fetch(`/api/hospitals/${editing.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify({ ...body, enabled: editing.enabled }),
+      });
+    } else {
+      await fetch("/api/hospitals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify(body),
+      });
+    }
+    setSaving(false);
+    cancelForm();
+    load();
+  };
+
+  const toggleHospital = async (h: Hospital) => {
+    await fetch(`/api/hospitals/${h.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-password": password },
+      body: JSON.stringify({ ...h, tags: Array.isArray(h.tags) ? h.tags.join(", ") : "", enabled: !h.enabled }),
+    });
+    load();
+  };
+
+  const deleteHospital = async (id: number) => {
+    if (!confirm("Delete this hospital?")) return;
+    await fetch(`/api/hospitals/${id}`, { method: "DELETE", headers: { "x-admin-password": password } });
+    load();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-[#003265]">Hospital Network</h3>
+          <p className="mt-0.5 text-sm text-[#5A5A66]">{hospitals.length} hospital{hospitals.length !== 1 ? "s" : ""}</p>
+        </div>
+        {!creating && !editing && (
+          <button onClick={openCreate} className="rounded-full bg-[#003265] px-5 py-2 text-sm font-semibold text-white hover:opacity-90">
+            + Add Hospital
+          </button>
+        )}
+      </div>
+
+      {/* Hospital form */}
+      {(creating || editing) && (
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-7 space-y-4">
+          <h4 className="font-semibold text-[#003265]">{editing ? "Edit Hospital" : "New Hospital"}</h4>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Hospital Name *</label>
+              <input value={hName} onChange={(e) => setHName(e.target.value)} placeholder="e.g. Bumrungrad International Hospital" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Location *</label>
+              <input value={hLocation} onChange={(e) => setHLocation(e.target.value)} placeholder="e.g. Sukhumvit, Bangkok" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Country Tag *</label>
+              <input value={hCountry} onChange={(e) => setHCountry(e.target.value)} placeholder="e.g. Thailand, Singapore, Turkey" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Specialty Tags</label>
+              <input value={hTags} onChange={(e) => setHTags(e.target.value)} placeholder="Cardiology, Cancer, Orthopedics (comma-separated)" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+            </div>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Description</label>
+            <textarea value={hDesc} onChange={(e) => setHDesc(e.target.value)} placeholder="Short description of the hospital…" rows={3} className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Image URL</label>
+            <input value={hImage} onChange={(e) => setHImage(e.target.value)} placeholder="https://example.com/hospital-photo.jpg" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+            {hImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={hImage} alt="preview" className="mt-2 h-24 w-40 rounded-lg border border-[#E2E8F0] object-cover" />
+            )}
+          </div>
+          <div className="flex gap-3">
+            <button onClick={save} disabled={saving} className="rounded-full bg-[#003265] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
+              {saving ? "Saving…" : "Save Hospital"}
+            </button>
+            <button onClick={cancelForm} className="rounded-full border border-[#E2E8F0] px-6 py-2.5 text-sm text-[#5A5A66] hover:border-[#003265]">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {/* Hospital list */}
+      {loading ? <Spinner /> : hospitals.length === 0 ? <Empty text="No hospitals yet. Add your first one." /> : (
+        <div className="space-y-3">
+          {hospitals.map((h) => (
+            <div key={h.id} className="flex items-center gap-4 rounded-xl border border-[#E2E8F0] bg-white px-6 py-4">
+              {h.image_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={h.image_url} alt={h.name} className="h-12 w-16 rounded-lg object-cover border border-[#E2E8F0] shrink-0" />
+              )}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-[#003265]">{h.name}</span>
+                  <span className="rounded-full border border-[#003265]/20 px-2 py-0.5 text-[10px] font-semibold uppercase text-[#003265]">{h.country_tag}</span>
+                </div>
+                <div className="mt-0.5 text-xs text-[#5A5A66]">{h.location}</div>
+                {h.tags && h.tags.length > 0 && (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {h.tags.map((t) => (
+                      <span key={t} className="rounded border border-[#E2E8F0] px-1.5 py-0.5 text-[10px] text-[#5A5A66]">{t}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <button onClick={() => toggleHospital(h)} className={`rounded-full px-3 py-1 text-xs font-semibold ${h.enabled ? "bg-[#00B02A]/10 text-[#00B02A]" : "bg-[#E2E8F0] text-[#5A5A66]"}`}>
+                  {h.enabled ? "Visible" : "Hidden"}
+                </button>
+                <button onClick={() => openEdit(h)} className="text-xs text-[#5A5A66] underline hover:text-[#003265]">Edit</button>
+                <button onClick={() => deleteHospital(h.id)} className="text-xs text-[#ED1C24] hover:underline">Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Services Tab ──────────────────────────────────────────────────────────────
+function ServicesTab({ password }: { password: string }) {
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Service | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [sTitle, setSTitle] = useState("");
+  const [sDesc, setSDesc] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch("/api/services", { headers: { "x-admin-password": password } });
+    const data = await res.json();
+    setServices(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, [password]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openCreate = () => { setSTitle(""); setSDesc(""); setEditing(null); setCreating(true); };
+  const openEdit = (s: Service) => { setSTitle(s.title); setSDesc(s.description ?? ""); setEditing(s); setCreating(false); };
+  const cancelForm = () => { setCreating(false); setEditing(null); };
+
+  const save = async () => {
+    if (!sTitle.trim()) return;
+    setSaving(true);
+    const body = { title: sTitle, description: sDesc, enabled: true, sort_order: services.length };
+    if (editing) {
+      await fetch(`/api/services/${editing.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify({ ...body, enabled: editing.enabled }),
+      });
+    } else {
+      await fetch("/api/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify(body),
+      });
+    }
+    setSaving(false);
+    cancelForm();
+    load();
+  };
+
+  const toggle = async (s: Service) => {
+    await fetch(`/api/services/${s.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-password": password },
+      body: JSON.stringify({ ...s, enabled: !s.enabled }),
+    });
+    load();
+  };
+
+  const move = async (s: Service, dir: "up" | "down") => {
+    const idx = services.findIndex((x) => x.id === s.id);
+    if (dir === "up" && idx === 0) return;
+    if (dir === "down" && idx === services.length - 1) return;
+    const swapIdx = dir === "up" ? idx - 1 : idx + 1;
+    const other = services[swapIdx];
+    await Promise.all([
+      fetch(`/api/services/${s.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify({ ...s, sort_order: other.sort_order }),
+      }),
+      fetch(`/api/services/${other.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify({ ...other, sort_order: s.sort_order }),
+      }),
+    ]);
+    load();
+  };
+
+  const deleteService = async (id: number) => {
+    if (!confirm("Delete this service?")) return;
+    await fetch(`/api/services/${id}`, { method: "DELETE", headers: { "x-admin-password": password } });
+    load();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-[#003265]">Services</h3>
+          <p className="mt-0.5 text-sm text-[#5A5A66]">Manage services shown in the navigation dropdown and services section.</p>
+        </div>
+        {!creating && !editing && (
+          <button onClick={openCreate} className="rounded-full bg-[#003265] px-5 py-2 text-sm font-semibold text-white hover:opacity-90">
+            + Add Service
+          </button>
+        )}
+      </div>
+
+      {(creating || editing) && (
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-7 space-y-4">
+          <h4 className="font-semibold text-[#003265]">{editing ? "Edit Service" : "New Service"}</h4>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Title *</label>
+            <input value={sTitle} onChange={(e) => setSTitle(e.target.value)} placeholder="e.g. Air Ambulance" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Description</label>
+            <textarea value={sDesc} onChange={(e) => setSDesc(e.target.value)} placeholder="Short description shown in dropdown and services section…" rows={2} className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+          </div>
+          <div className="flex gap-3">
+            <button onClick={save} disabled={saving} className="rounded-full bg-[#003265] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
+              {saving ? "Saving…" : "Save Service"}
+            </button>
+            <button onClick={cancelForm} className="rounded-full border border-[#E2E8F0] px-6 py-2.5 text-sm text-[#5A5A66] hover:border-[#003265]">Cancel</button>
+          </div>
+        </div>
+      )}
+
+      {loading ? <Spinner /> : services.length === 0 ? <Empty text="No services yet." /> : (
+        <div className="space-y-2">
+          {services.map((s, i) => (
+            <div key={s.id} className="flex items-center gap-4 rounded-xl border border-[#E2E8F0] bg-white px-5 py-4">
+              {/* Reorder buttons */}
+              <div className="flex flex-col gap-0.5">
+                <button onClick={() => move(s, "up")} disabled={i === 0} className="text-[10px] text-[#5A5A66] hover:text-[#003265] disabled:opacity-30">▲</button>
+                <button onClick={() => move(s, "down")} disabled={i === services.length - 1} className="text-[10px] text-[#5A5A66] hover:text-[#003265] disabled:opacity-30">▼</button>
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="font-medium text-[#003265]">{s.title}</span>
+                {s.description && <p className="mt-0.5 text-xs text-[#5A5A66] line-clamp-1">{s.description}</p>}
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <button onClick={() => toggle(s)} className={`rounded-full px-3 py-1 text-xs font-semibold ${s.enabled ? "bg-[#00B02A]/10 text-[#00B02A]" : "bg-[#E2E8F0] text-[#5A5A66]"}`}>
+                  {s.enabled ? "In Nav" : "Hidden"}
+                </button>
+                <button onClick={() => openEdit(s)} className="text-xs text-[#5A5A66] underline hover:text-[#003265]">Edit</button>
+                <button onClick={() => deleteService(s.id)} className="text-xs text-[#ED1C24] hover:underline">Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -263,12 +770,7 @@ function BlogTab({ password }: { password: string }) {
                   {p.published ? "Published" : "Draft"}
                 </button>
                 {p.published && (
-                  <a
-                    href={`/blog/${p.slug}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs font-semibold text-[#003265] underline hover:opacity-70"
-                  >
+                  <a href={`/blog/${p.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#003265] underline hover:opacity-70">
                     View Live ↗
                   </a>
                 )}
@@ -303,18 +805,13 @@ function PostEditor({
       try {
         const parsed = JSON.parse(initial.content);
         if (Array.isArray(parsed)) return parsed;
-      } catch (e) {
-        // Fallback for non-JSON content
-      }
+      } catch (e) { /* fallback */ }
       return [{ type: "paragraph", value: initial.content }];
     }
     return [{ type: "paragraph", value: "" }];
   });
 
-  // Auto-generate slug from title when creating new
-  useEffect(() => {
-    if (!initial) setSlug(slugify(title));
-  }, [title, initial]);
+  useEffect(() => { if (!initial) setSlug(slugify(title)); }, [title, initial]);
 
   const addBlock = (type: string) => {
     let newBlock: any = { type };
@@ -324,7 +821,6 @@ function PostEditor({
     else if (type === "video") { newBlock.url = ""; }
     else if (type === "list") { newBlock.items = [""]; }
     else if (type === "poll") { newBlock.question = ""; newBlock.options = ["", ""]; newBlock.votes = [0, 0]; }
-
     setBlocks([...blocks, newBlock]);
   };
 
@@ -335,10 +831,7 @@ function PostEditor({
   };
 
   const deleteBlock = (index: number) => {
-    if (blocks.length <= 1) {
-      alert("Posts must have at least one content block.");
-      return;
-    }
+    if (blocks.length <= 1) { alert("Posts must have at least one content block."); return; }
     setBlocks(blocks.filter((_, i) => i !== index));
   };
 
@@ -354,21 +847,17 @@ function PostEditor({
   };
 
   const save = async () => {
-    // Basic validation
     if (!title.trim()) { setError("Title is required"); return; }
     if (!slug.trim()) { setError("Slug is required"); return; }
-
     setSaving(true); setError("");
     const contentString = JSON.stringify(blocks);
     const url = initial ? `/api/blog/${initial.id}` : "/api/blog";
     const method = initial ? "PUT" : "POST";
-    
     const res = await fetch(url, {
       method,
       headers: { "Content-Type": "application/json", "x-admin-password": password },
       body: JSON.stringify({ title, slug, content: contentString, published }),
     });
-    
     const data = await res.json();
     if (!res.ok) { setError(data.error ?? "Save failed"); setSaving(false); return; }
     onSave();
@@ -384,301 +873,109 @@ function PostEditor({
       <div className="space-y-6 rounded-2xl border border-[#E2E8F0] bg-white p-8">
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Title</label>
-          <input
-            value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Your post title"
-            className="w-full rounded-lg border border-[#E2E8F0] px-4 py-3 text-sm text-[#0A0A0F] focus:border-[#003265] focus:outline-none"
-          />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Your post title" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-3 text-sm text-[#0A0A0F] focus:border-[#003265] focus:outline-none" />
         </div>
 
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">
             Slug <span className="normal-case font-normal">(URL: /blog/{slug || "…"})</span>
           </label>
-          <input
-            value={slug} onChange={(e) => setSlug(slugify(e.target.value))} placeholder="post-url-slug"
-            className="w-full rounded-lg border border-[#E2E8F0] px-4 py-3 text-sm font-mono text-[#0A0A0F] focus:border-[#003265] focus:outline-none"
-          />
+          <input value={slug} onChange={(e) => setSlug(slugify(e.target.value))} placeholder="post-url-slug" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-3 text-sm font-mono text-[#0A0A0F] focus:border-[#003265] focus:outline-none" />
         </div>
 
-        {/* --- Block list --- */}
+        {/* Block list */}
         <div className="space-y-4">
           <label className="block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Blog Content Blocks</label>
-          
           <div className="space-y-4">
             {blocks.map((block, index) => (
               <div key={index} className="relative rounded-xl border border-[#E2E8F0] bg-[#F8F7F4] p-4 pt-10">
-                
-                {/* Block header with action buttons */}
                 <div className="absolute top-2 left-4 right-4 flex items-center justify-between">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#003265]">
-                    Block {index + 1}: {block.type}
-                  </span>
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#003265]">Block {index + 1}: {block.type}</span>
                   <div className="flex gap-2">
-                    <button
-                      type="button" onClick={() => moveBlock(index, "up")} disabled={index === 0}
-                      className="text-xs text-[#5A5A66] hover:text-[#003265] disabled:opacity-30"
-                    >
-                      ▲ Move Up
-                    </button>
-                    <button
-                      type="button" onClick={() => moveBlock(index, "down")} disabled={index === blocks.length - 1}
-                      className="text-xs text-[#5A5A66] hover:text-[#003265] disabled:opacity-30"
-                    >
-                      ▼ Move Down
-                    </button>
-                    <button
-                      type="button" onClick={() => deleteBlock(index)}
-                      className="text-xs text-[#ED1C24] hover:underline"
-                    >
-                      Delete
-                    </button>
+                    <button type="button" onClick={() => moveBlock(index, "up")} disabled={index === 0} className="text-xs text-[#5A5A66] hover:text-[#003265] disabled:opacity-30">▲ Move Up</button>
+                    <button type="button" onClick={() => moveBlock(index, "down")} disabled={index === blocks.length - 1} className="text-xs text-[#5A5A66] hover:text-[#003265] disabled:opacity-30">▼ Move Down</button>
+                    <button type="button" onClick={() => deleteBlock(index)} className="text-xs text-[#ED1C24] hover:underline">Delete</button>
                   </div>
                 </div>
 
-                {/* Block editor views */}
                 {block.type === "paragraph" && (
-                  <textarea
-                    value={block.value}
-                    onChange={(e) => updateBlock(index, { value: e.target.value })}
-                    placeholder="Write paragraph text..."
-                    rows={4}
-                    className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none focus:border-[#003265]"
-                  />
+                  <textarea value={block.value} onChange={(e) => updateBlock(index, { value: e.target.value })} placeholder="Write paragraph text..." rows={4} className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none focus:border-[#003265]" />
                 )}
-
                 {block.type === "heading" && (
                   <div className="flex gap-2">
-                    <select
-                      value={block.level ?? 2}
-                      onChange={(e) => updateBlock(index, { level: parseInt(e.target.value) })}
-                      className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0A0A0F] focus:outline-none"
-                    >
-                      <option value={2}>Heading H2</option>
-                      <option value={3}>Heading H3</option>
-                      <option value={4}>Heading H4</option>
+                    <select value={block.level ?? 2} onChange={(e) => updateBlock(index, { level: parseInt(e.target.value) })} className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm text-[#0A0A0F] focus:outline-none">
+                      <option value={2}>H2</option><option value={3}>H3</option><option value={4}>H4</option>
                     </select>
-                    <input
-                      type="text"
-                      value={block.value}
-                      onChange={(e) => updateBlock(index, { value: e.target.value })}
-                      placeholder="Heading text"
-                      className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none focus:border-[#003265]"
-                    />
+                    <input type="text" value={block.value} onChange={(e) => updateBlock(index, { value: e.target.value })} placeholder="Heading text" className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none focus:border-[#003265]" />
                   </div>
                 )}
-
                 {block.type === "image" && (
                   <div className="space-y-2">
-                    <input
-                      type="text"
-                      value={block.url ?? ""}
-                      onChange={(e) => updateBlock(index, { url: e.target.value })}
-                      placeholder="Image URL (e.g. https://images.unsplash.com/...)"
-                      className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none focus:border-[#003265]"
-                    />
+                    <input type="text" value={block.url ?? ""} onChange={(e) => updateBlock(index, { url: e.target.value })} placeholder="Image URL" className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none focus:border-[#003265]" />
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-[#5A5A66]">— or upload —</span>
                       <label className="cursor-pointer rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]">
                         📁 Choose File
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="sr-only"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            const objectUrl = URL.createObjectURL(file);
-                            updateBlock(index, { url: objectUrl, _file: file });
-                          }}
-                        />
+                        <input type="file" accept="image/*" className="sr-only" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; updateBlock(index, { url: URL.createObjectURL(file), _file: file }); }} />
                       </label>
-                      {block.url && (
-                        <img src={block.url} alt="preview" className="h-10 w-14 rounded object-cover border border-[#E2E8F0]" />
-                      )}
+                      {block.url && <img src={block.url} alt="preview" className="h-10 w-14 rounded object-cover border border-[#E2E8F0]" />}
                     </div>
-                    <input
-                      type="text"
-                      value={block.caption ?? ""}
-                      onChange={(e) => updateBlock(index, { caption: e.target.value })}
-                      placeholder="Image caption (optional)"
-                      className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none focus:border-[#003265]"
-                    />
+                    <input type="text" value={block.caption ?? ""} onChange={(e) => updateBlock(index, { caption: e.target.value })} placeholder="Image caption (optional)" className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none focus:border-[#003265]" />
                   </div>
                 )}
-
                 {block.type === "video" && (
                   <div className="space-y-2">
-                    <input
-                      type="text"
-                      value={block.url ?? ""}
-                      onChange={(e) => updateBlock(index, { url: e.target.value })}
-                      placeholder="Video Embed URL (YouTube/Vimeo embed link or video path)"
-                      className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none"
-                    />
+                    <input type="text" value={block.url ?? ""} onChange={(e) => updateBlock(index, { url: e.target.value })} placeholder="Video Embed URL" className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none" />
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-[#5A5A66]">— or upload video file —</span>
+                      <span className="text-xs text-[#5A5A66]">— or upload video —</span>
                       <label className="cursor-pointer rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]">
                         🎬 Choose Video
-                        <input
-                          type="file"
-                          accept="video/*"
-                          className="sr-only"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (!file) return;
-                            const objectUrl = URL.createObjectURL(file);
-                            updateBlock(index, { url: objectUrl, _file: file });
-                          }}
-                        />
+                        <input type="file" accept="video/*" className="sr-only" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; updateBlock(index, { url: URL.createObjectURL(file), _file: file }); }} />
                       </label>
                     </div>
                   </div>
                 )}
-
                 {block.type === "list" && (
                   <div className="space-y-2">
                     {block.items.map((item: string, idx: number) => (
                       <div key={idx} className="flex gap-2">
-                        <input
-                          type="text"
-                          value={item}
-                          onChange={(e) => {
-                            const newItems = [...block.items];
-                            newItems[idx] = e.target.value;
-                            updateBlock(index, { items: newItems });
-                          }}
-                          placeholder={`List item ${idx + 1}`}
-                          className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newItems = block.items.filter((_: any, i: number) => i !== idx);
-                            updateBlock(index, { items: newItems });
-                          }}
-                          className="text-xs text-[#ED1C24] hover:underline"
-                        >
-                          Remove
-                        </button>
+                        <input type="text" value={item} onChange={(e) => { const newItems = [...block.items]; newItems[idx] = e.target.value; updateBlock(index, { items: newItems }); }} placeholder={`List item ${idx + 1}`} className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none" />
+                        <button type="button" onClick={() => updateBlock(index, { items: block.items.filter((_: any, i: number) => i !== idx) })} className="text-xs text-[#ED1C24] hover:underline">Remove</button>
                       </div>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => updateBlock(index, { items: [...block.items, ""] })}
-                      className="text-xs font-semibold text-[#003265] hover:underline"
-                    >
-                      + Add Point
-                    </button>
+                    <button type="button" onClick={() => updateBlock(index, { items: [...block.items, ""] })} className="text-xs font-semibold text-[#003265] hover:underline">+ Add Point</button>
                   </div>
                 )}
-
                 {block.type === "poll" && (
                   <div className="space-y-2">
-                    <input
-                      type="text"
-                      value={block.question ?? ""}
-                      onChange={(e) => updateBlock(index, { question: e.target.value })}
-                      placeholder="Poll Question (e.g. Which topic would you like us to cover next?)"
-                      className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm font-semibold text-[#0A0A0F] focus:outline-none"
-                    />
+                    <input type="text" value={block.question ?? ""} onChange={(e) => updateBlock(index, { question: e.target.value })} placeholder="Poll Question" className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm font-semibold focus:outline-none" />
                     {block.options.map((opt: string, idx: number) => (
                       <div key={idx} className="flex gap-2">
-                        <input
-                          type="text"
-                          value={opt}
-                          onChange={(e) => {
-                            const newOpts = [...block.options];
-                            newOpts[idx] = e.target.value;
-                            updateBlock(index, { options: newOpts });
-                          }}
-                          placeholder={`Option ${idx + 1}`}
-                          className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm text-[#0A0A0F] focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newOpts = block.options.filter((_: any, i: number) => i !== idx);
-                            const newVotes = block.votes.filter((_: any, i: number) => i !== idx);
-                            updateBlock(index, { options: newOpts, votes: newVotes });
-                          }}
-                          className="text-xs text-[#ED1C24] hover:underline"
-                        >
-                          Remove
-                        </button>
+                        <input type="text" value={opt} onChange={(e) => { const newOpts = [...block.options]; newOpts[idx] = e.target.value; updateBlock(index, { options: newOpts }); }} placeholder={`Option ${idx + 1}`} className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none" />
+                        <button type="button" onClick={() => { const newOpts = block.options.filter((_: any, i: number) => i !== idx); const newVotes = block.votes.filter((_: any, i: number) => i !== idx); updateBlock(index, { options: newOpts, votes: newVotes }); }} className="text-xs text-[#ED1C24] hover:underline">Remove</button>
                       </div>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => updateBlock(index, {
-                        options: [...block.options, ""],
-                        votes: [...block.votes, 0]
-                      })}
-                      className="text-xs font-semibold text-[#003265] hover:underline"
-                    >
-                      + Add Option
-                    </button>
+                    <button type="button" onClick={() => updateBlock(index, { options: [...block.options, ""], votes: [...block.votes, 0] })} className="text-xs font-semibold text-[#003265] hover:underline">+ Add Option</button>
                   </div>
                 )}
-
               </div>
             ))}
           </div>
 
-          {/* Block Creation Toolbar */}
+          {/* Block toolbar */}
           <div className="flex flex-wrap gap-2 rounded-xl border border-[#E2E8F0] bg-[#F8F7F4] p-3">
-            <span className="w-full text-left text-[10px] font-bold uppercase tracking-widest text-[#5A5A66] mb-1">
-              Add Block:
-            </span>
-            <button
-              type="button" onClick={() => addBlock("paragraph")}
-              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
-            >
-              + Text Paragraph
-            </button>
-            <button
-              type="button" onClick={() => addBlock("heading")}
-              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
-            >
-              + Heading
-            </button>
-            <button
-              type="button" onClick={() => addBlock("list")}
-              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
-            >
-              + Bullet Points
-            </button>
-            <button
-              type="button" onClick={() => addBlock("image")}
-              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
-            >
-              + Image
-            </button>
-            <button
-              type="button" onClick={() => addBlock("video")}
-              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
-            >
-              + Video
-            </button>
-            <button
-              type="button" onClick={() => addBlock("poll")}
-              className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]"
-            >
-              + Interactive Poll
-            </button>
+            <span className="w-full text-left text-[10px] font-bold uppercase tracking-widest text-[#5A5A66] mb-1">Add Block:</span>
+            {["paragraph", "heading", "list", "image", "video", "poll"].map((type) => (
+              <button key={type} type="button" onClick={() => addBlock(type)} className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]">
+                + {type === "paragraph" ? "Text Paragraph" : type === "poll" ? "Interactive Poll" : type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
           </div>
         </div>
 
         <div className="flex items-center gap-3">
           <span className="text-sm text-[#5A5A66]">Status:</span>
-          <button
-            type="button"
-            onClick={() => setPublished((v) => !v)}
-            className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${
-              published
-                ? "bg-[#00B02A]/10 text-[#00B02A] border border-[#00B02A]/30"
-                : "bg-[#E2E8F0] text-[#5A5A66] border border-[#E2E8F0] hover:border-[#003265]"
-            }`}
-          >
+          <button type="button" onClick={() => setPublished((v) => !v)} className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-colors ${published ? "bg-[#00B02A]/10 text-[#00B02A] border border-[#00B02A]/30" : "bg-[#E2E8F0] text-[#5A5A66] border border-[#E2E8F0] hover:border-[#003265]"}`}>
             {published ? "✓ Published" : "Draft"}
           </button>
         </div>
@@ -686,21 +983,15 @@ function PostEditor({
         {error && <p className="text-sm text-[#ED1C24]">{error}</p>}
 
         <div className="flex gap-3">
-          <button
-            onClick={save} disabled={saving}
-            className="rounded-full bg-[#003265] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
-          >
+          <button onClick={save} disabled={saving} className="rounded-full bg-[#003265] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
             {saving ? "Saving…" : "Save Post"}
           </button>
-          <button onClick={onCancel} className="rounded-full border border-[#E2E8F0] px-6 py-2.5 text-sm text-[#5A5A66] hover:border-[#003265]">
-            Cancel
-          </button>
+          <button onClick={onCancel} className="rounded-full border border-[#E2E8F0] px-6 py-2.5 text-sm text-[#5A5A66] hover:border-[#003265]">Cancel</button>
         </div>
       </div>
     </div>
   );
 }
-
 
 // ─── Shared micro-components ──────────────────────────────────────────────────
 function Spinner() {

@@ -1,4 +1,4 @@
--- Run this once in the Vercel Postgres query console after connecting your database.
+-- Run this once in the Supabase/Vercel Postgres query console after connecting your database.
 
 CREATE TABLE IF NOT EXISTS consultations (
   id         SERIAL PRIMARY KEY,
@@ -20,3 +20,60 @@ CREATE TABLE IF NOT EXISTS posts (
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- ─── Site-wide key/value settings ───────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS site_settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+-- Seed defaults (idempotent)
+INSERT INTO site_settings (key, value)
+  VALUES ('testimonials_visible', 'true')
+  ON CONFLICT (key) DO NOTHING;
+
+-- ─── Testimonials ────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS testimonials (
+  id         SERIAL PRIMARY KEY,
+  quote      TEXT NOT NULL,
+  name       TEXT NOT NULL,
+  location   TEXT NOT NULL,
+  enabled    BOOLEAN DEFAULT true,
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- ─── Hospitals ───────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS hospitals (
+  id          SERIAL PRIMARY KEY,
+  name        TEXT NOT NULL,
+  location    TEXT NOT NULL,
+  description TEXT,
+  image_url   TEXT,
+  country_tag TEXT NOT NULL DEFAULT 'Thailand',
+  tags        TEXT[] DEFAULT '{}',
+  enabled     BOOLEAN DEFAULT true,
+  sort_order  INT DEFAULT 0,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- ─── Services ────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS services (
+  id          SERIAL PRIMARY KEY,
+  title       TEXT NOT NULL,
+  description TEXT,
+  enabled     BOOLEAN DEFAULT true,
+  sort_order  INT DEFAULT 0,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+
+-- Seed default services (idempotent via title uniqueness assumption)
+INSERT INTO services (title, description, sort_order) VALUES
+  ('Doctor Appointments',          'We schedule the right specialist at the right hospital — no waiting rooms, no guesswork.', 0),
+  ('Second Medical Opinion',       'An experienced specialist reviews your case before you decide on anything.',               1),
+  ('Telemedicine',                 'Speak with a specialist remotely before you travel, so your plan is clear from day one.',  2),
+  ('Medical Visa Assistance',      'Every document, handled — for a smooth, timely visa approval.',                            3),
+  ('Hotel & Accommodation',        'Comfortable stays near your hospital, chosen for recovery needs and budget.',              4),
+  ('Air Tickets & Airport Pickup', 'Flights coordinated around treatment, with a welcome when you land.',                     5),
+  ('Air Ambulance',                'Emergency or scheduled air medical transport, coordinated end-to-end.',                    6),
+  ('Tourism Package',              'Combine medical care with a curated travel experience in your destination country.',       7)
+ON CONFLICT DO NOTHING;

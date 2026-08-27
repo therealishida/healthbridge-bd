@@ -1,6 +1,7 @@
 import Image from "next/image";
 import logoImg from "@/brandassets/logo-cropped.png";
 import Reveal from "./ui/reveal";
+import HospitalLogoRibbon from "./hospital-logo-ribbon";
 
 export default function About() {
   return (
@@ -31,6 +32,11 @@ export default function About() {
               />
             </div>
           </div>
+        </Reveal>
+
+        {/* Hospital logo ribbon — shown below the intro text */}
+        <Reveal delay={0.2}>
+          <HospitalLogoRibbon />
         </Reveal>
       </div>
     </section>
