@@ -23,14 +23,14 @@ export default function Hero() {
       <div className="absolute inset-0 bg-blue-900/60" />
 
       <div className="relative z-10 mx-auto w-full max-w-6xl px-6">
-        <h1 className="max-w-4xl font-display text-[40px] font-medium leading-[1.05] tracking-tightest text-white md:text-[88px]">
+        <h1 className="max-w-2xl font-display text-[32px] font-medium leading-[1.1] tracking-tight text-white sm:text-[42px] md:text-[56px]">
           {words.map((w, i) => (
             <motion.span
               key={i}
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.15 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
-              className="mr-4 inline-block"
+              className="mr-[0.25em] inline-block"
             >
               {w}
             </motion.span>
@@ -41,9 +41,9 @@ export default function Hero() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.7 }}
-          className="mt-8 max-w-xl text-lg text-blue-100"
+          className="mt-6 max-w-md text-base leading-relaxed text-blue-100/90 md:text-lg"
         >
-          Healthbridge facilitates your medical journey to Bangkok&apos;s premium healthcare facilities. As your dedicated advocate, we provide seamless logistics and premium care from your first enquiry through full recovery.
+          Your dedicated medical coordinator — from hospital selection and visa support to on-ground care and full recovery.
         </motion.p>
 
         <motion.div
