@@ -797,7 +797,7 @@ function ServicePageEditor({
                     <span className="text-xs text-[#5A5A66]">— or upload —</span>
                     <label className="cursor-pointer rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]">
                       📁 Choose File
-                      <input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; updateBlock(index, { url: URL.createObjectURL(f) }); }} />
+                      <input type="file" accept="image/*" className="sr-only" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const fd = new FormData(); fd.append("image", f); const res = await fetch("/api/upload", { method: "POST", headers: { "x-admin-password": password }, body: fd }); const data = await res.json(); if (data.url) updateBlock(index, { url: data.url }); }} />
                     </label>
                     {block.url && <img src={block.url} alt="preview" className="h-10 w-14 rounded object-cover border border-[#E2E8F0]" />}
                   </div>
@@ -1064,7 +1064,7 @@ function PostEditor({ password, initial, onSave, onCancel }: { password: string;
                       <span className="text-xs text-[#5A5A66]">— or upload —</span>
                       <label className="cursor-pointer rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265]">
                         📁 Choose File
-                        <input type="file" accept="image/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; updateBlock(index, { url: URL.createObjectURL(f), _file: f }); }} />
+                        <input type="file" accept="image/*" className="sr-only" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const fd = new FormData(); fd.append("image", f); const res = await fetch("/api/upload", { method: "POST", headers: { "x-admin-password": password }, body: fd }); const data = await res.json(); if (data.url) updateBlock(index, { url: data.url }); }} />
                       </label>
                       {block.url && <img src={block.url} alt="preview" className="h-10 w-14 rounded object-cover border border-[#E2E8F0]" />}
                     </div>
@@ -1078,7 +1078,7 @@ function PostEditor({ password, initial, onSave, onCancel }: { password: string;
                       <span className="text-xs text-[#5A5A66]">— or upload —</span>
                       <label className="cursor-pointer rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265]">
                         🎬 Choose Video
-                        <input type="file" accept="video/*" className="sr-only" onChange={(e) => { const f = e.target.files?.[0]; if (!f) return; updateBlock(index, { url: URL.createObjectURL(f), _file: f }); }} />
+                        <input type="file" accept="video/*" className="sr-only" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const fd = new FormData(); fd.append("image", f); const res = await fetch("/api/upload", { method: "POST", headers: { "x-admin-password": password }, body: fd }); const data = await res.json(); if (data.url) updateBlock(index, { url: data.url }); }} />
                       </label>
                     </div>
                   </div>

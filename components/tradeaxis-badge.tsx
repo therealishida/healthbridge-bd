@@ -6,6 +6,9 @@
  * mirrors the natural "powered by" placement used across web products,
  * and keeps the left side clear for future chat/support widgets.
  */
+import Image from "next/image";
+import tradeAxisLogo from "@/brandassets/TradeAxis Logo Transparent.png";
+
 export default function TradeAxisBadge() {
   return (
     <a
@@ -21,9 +24,8 @@ export default function TradeAxisBadge() {
           <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-ink-muted">A venture by</p>
         </div>
         {/* Logo */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/tradeaxis-logo.png"
+        <Image
+          src={tradeAxisLogo}
           alt="TradeAxis Global Ventures"
           className="h-8 w-auto max-w-[100px] object-contain"
         />
