@@ -184,7 +184,7 @@ export default function Contact() {
   );
 }
 
-function Field({ label, placeholder, type = "text", value, onChange, required }: any) {
+function Field({ label, placeholder, type = "text", value, onChange, required }: { label: string; placeholder: string; type?: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; required?: boolean }) {
   return (
     <div>
       <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</label>
@@ -193,7 +193,7 @@ function Field({ label, placeholder, type = "text", value, onChange, required }:
   );
 }
 
-function SelectField({ label, value, onChange, required, options }: any) {
+function SelectField({ label, value, onChange, required, options }: { label: string; value: string; onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void; required?: boolean; options: string[] }) {
   return (
     <div>
       <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</label>
@@ -204,7 +204,7 @@ function SelectField({ label, value, onChange, required, options }: any) {
   );
 }
 
-function FileField({ label, onChange, uploaded }: any) {
+function FileField({ label, onChange, uploaded }: { label: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; uploaded: boolean }) {
   return (
     <div>
       <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</label>
@@ -216,7 +216,7 @@ function FileField({ label, onChange, uploaded }: any) {
   );
 }
 
-function CheckboxField({ label, checked, onChange, required }: any) {
+function CheckboxField({ label, checked, onChange, required }: { label: string; checked: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; required?: boolean }) {
   return (
     <label className="flex items-start gap-3 text-sm text-ink cursor-pointer">
       <input type="checkbox" checked={checked} onChange={onChange} required={required} className="mt-1 rounded border-line/60 text-primary focus:ring-primary h-4 w-4 shrink-0" />
