@@ -58,13 +58,19 @@ CREATE TABLE IF NOT EXISTS hospitals (
 
 -- ─── Services ────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS services (
-  id          SERIAL PRIMARY KEY,
-  title       TEXT NOT NULL,
-  description TEXT,
-  enabled     BOOLEAN DEFAULT true,
-  sort_order  INT DEFAULT 0,
-  created_at  TIMESTAMPTZ DEFAULT now()
+  id           SERIAL PRIMARY KEY,
+  title        TEXT NOT NULL,
+  slug         TEXT UNIQUE,
+  description  TEXT,
+  page_content TEXT,           -- JSON block array for service detail page
+  enabled      BOOLEAN DEFAULT true,
+  sort_order   INT DEFAULT 0,
+  created_at   TIMESTAMPTZ DEFAULT now()
 );
+
+-- Migration: add slug + page_content columns if upgrading from previous schema
+ALTER TABLE services ADD COLUMN IF NOT EXISTS slug TEXT UNIQUE;
+ALTER TABLE services ADD COLUMN IF NOT EXISTS page_content TEXT;
 
 -- Seed default services (idempotent via title uniqueness assumption)
 INSERT INTO services (title, description, sort_order) VALUES

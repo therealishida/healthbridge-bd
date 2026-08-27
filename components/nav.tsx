@@ -4,14 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import logoImg from "@/brandassets/logo-cropped.png";
 
-type Service = { id: number; title: string; description: string | null };
+type Service = { id: number; title: string; slug: string | null; description: string | null };
 
 const staticLinks = [
-  { href: "#about",   label: "About" },
+  { href: "#about",    label: "About" },
   { href: "#hospitals", label: "Hospitals" },
-  { href: "#stories", label: "Stories" },
-  { href: "/blog",    label: "Blog" },
-  { href: "#contact", label: "Contact" },
+  { href: "/blog",     label: "Blog" },
+  { href: "#contact",  label: "Contact" },
 ];
 
 export default function Nav() {
@@ -19,15 +18,22 @@ export default function Nav() {
   const [servicesOpen, setServicesOpen] = useState(false);
   const [mobileServicesOpen, setMobileServicesOpen] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
+  const [showStories, setShowStories] = useState(true);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const hoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Fetch services for dropdown
   useEffect(() => {
+    // Fetch services for dropdown
     fetch("/api/services")
       .then((r) => r.json())
       .then((data) => setServices(Array.isArray(data) ? data : []))
       .catch(() => setServices([]));
+
+    // Check testimonials visibility to decide whether to show "Stories"
+    fetch("/api/settings?key=testimonials_visible")
+      .then((r) => r.json())
+      .then((data) => setShowStories(data.value !== "false"))
+      .catch(() => setShowStories(true));
   }, []);
 
   // Close dropdown on outside click
@@ -54,20 +60,12 @@ export default function Nav() {
     <header className="fixed top-0 z-50 w-full border-b border-line/60 bg-bg/70 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <a href="/" className="flex items-center">
-          <Image
-            src={logoImg}
-            alt="HealthBridge logo"
-            height={40}
-            className="h-10 w-auto"
-          />
+          <Image src={logoImg} alt="HealthBridge logo" height={40} className="h-10 w-auto" />
         </a>
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 md:flex">
-          {/* About */}
-          <a href="#about" className="text-sm text-ink-muted transition-colors hover:text-ink">
-            About
-          </a>
+          <a href="#about" className="text-sm text-ink-muted transition-colors hover:text-ink">About</a>
 
           {/* Services — hover dropdown */}
           <div
@@ -82,13 +80,7 @@ export default function Nav() {
               onClick={(e) => { e.preventDefault(); setServicesOpen((v) => !v); }}
             >
               Services
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 12 12"
-                fill="none"
-                className={`transition-transform duration-200 ${servicesOpen ? "rotate-180" : ""}`}
-              >
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className={`transition-transform duration-200 ${servicesOpen ? "rotate-180" : ""}`}>
                 <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </a>
@@ -96,7 +88,7 @@ export default function Nav() {
             {/* Dropdown panel */}
             {servicesOpen && services.length > 0 && (
               <div
-                className="absolute left-1/2 top-full z-50 mt-3 w-64 -translate-x-1/2 rounded-xl border border-line/60 bg-surface shadow-lg"
+                className="absolute left-1/2 top-full z-50 mt-3 w-72 -translate-x-1/2 rounded-xl border border-line/60 bg-surface shadow-lg"
                 onMouseEnter={handleServicesMouseEnter}
                 onMouseLeave={handleServicesMouseLeave}
               >
@@ -106,15 +98,13 @@ export default function Nav() {
                   {services.map((s) => (
                     <a
                       key={s.id}
-                      href="#services"
+                      href={s.slug ? `/services/${s.slug}` : "#services"}
                       className="block rounded-lg px-4 py-2.5 transition-colors hover:bg-bg"
                       onClick={() => setServicesOpen(false)}
                     >
                       <span className="block text-sm font-medium text-ink">{s.title}</span>
                       {s.description && (
-                        <span className="mt-0.5 block text-xs text-ink-muted line-clamp-1">
-                          {s.description}
-                        </span>
+                        <span className="mt-0.5 block text-xs text-ink-muted line-clamp-1">{s.description}</span>
                       )}
                     </a>
                   ))}
@@ -123,16 +113,15 @@ export default function Nav() {
             )}
           </div>
 
-          {/* Other links */}
-          {staticLinks.slice(1).map((l) => (
-            <a
-              key={l.href}
-              href={l.href}
-              className="text-sm text-ink-muted transition-colors hover:text-ink"
-            >
-              {l.label}
-            </a>
-          ))}
+          <a href="#hospitals" className="text-sm text-ink-muted transition-colors hover:text-ink">Hospitals</a>
+
+          {/* Stories — conditionally shown based on testimonials_visible setting */}
+          {showStories && (
+            <a href="#stories" className="text-sm text-ink-muted transition-colors hover:text-ink">Stories</a>
+          )}
+
+          <a href="/blog" className="text-sm text-ink-muted transition-colors hover:text-ink">Blog</a>
+          <a href="#contact" className="text-sm text-ink-muted transition-colors hover:text-ink">Contact</a>
         </nav>
 
         <a
@@ -143,11 +132,7 @@ export default function Nav() {
         </a>
 
         {/* Mobile hamburger */}
-        <button
-          className="flex flex-col gap-1.5 md:hidden"
-          onClick={() => setOpen(!open)}
-          aria-label="Menu"
-        >
+        <button className="flex flex-col gap-1.5 md:hidden" onClick={() => setOpen(!open)} aria-label="Menu">
           <span className="h-px w-6 bg-ink" />
           <span className="h-px w-6 bg-ink" />
         </button>
@@ -174,7 +159,7 @@ export default function Nav() {
                 {services.map((s) => (
                   <a
                     key={s.id}
-                    href="#services"
+                    href={s.slug ? `/services/${s.slug}` : "#services"}
                     className="block py-1.5 text-sm text-ink-muted"
                     onClick={() => setOpen(false)}
                   >
@@ -185,11 +170,15 @@ export default function Nav() {
             )}
           </div>
 
-          {staticLinks.slice(1).map((l) => (
-            <a key={l.href} href={l.href} className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>
-              {l.label}
-            </a>
-          ))}
+          <a href="#hospitals" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Hospitals</a>
+
+          {/* Stories — conditional */}
+          {showStories && (
+            <a href="#stories" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Stories</a>
+          )}
+
+          <a href="/blog" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Blog</a>
+          <a href="#contact" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Contact</a>
         </div>
       )}
     </header>

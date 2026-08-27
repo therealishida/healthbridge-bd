@@ -4,7 +4,7 @@ import Image from "next/image";
 import { motion } from "motion/react";
 import thailandImg from "@/brandassets/Thailand.jpg";
 
-const headline = "World-class care, one coordinator away";
+const headline = "Connecting Bangladeshi Patients to World Class Healthcare";
 const words = headline.split(" ");
 
 export default function Hero() {

@@ -7,6 +7,7 @@ import Testimonials from "@/components/testimonials";
 import Faq from "@/components/faq";
 import Contact from "@/components/contact";
 import Footer from "@/components/footer";
+import TradeAxisBadge from "@/components/tradeaxis-badge";
 
 export default function Home() {
   return (
@@ -20,6 +21,7 @@ export default function Home() {
       <Faq />
       <Contact />
       <Footer />
+      <TradeAxisBadge />
     </main>
   );
 }
