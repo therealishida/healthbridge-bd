@@ -31,25 +31,26 @@ export default function Hospitals() {
       <div className="mx-auto max-w-6xl px-6">
         <Reveal>
           {/* Header with chevron link to /hospitals page */}
-          <div className="flex items-center gap-4">
-            <h2 className="max-w-xl font-display text-3xl font-medium leading-tight text-primary md:text-5xl">
-              Our Trusted Partners Abroad
+          <div className="max-w-2xl">
+            <h2 className="font-display text-3xl font-medium leading-tight text-primary md:text-5xl">
+              Our Trusted Partners <span className="inline-flex items-center gap-4">Abroad
+                <a
+                  href="/hospitals"
+                  aria-label="View all hospitals"
+                  className="group flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/25 text-primary transition-all hover:border-primary hover:bg-primary hover:text-white"
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    className="transition-transform group-hover:translate-x-0.5"
+                  >
+                    <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </a>
+              </span>
             </h2>
-            <a
-              href="/hospitals"
-              aria-label="View all hospitals"
-              className="group mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-primary/25 text-primary transition-all hover:border-primary hover:bg-primary hover:text-white"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 14 14"
-                fill="none"
-                className="transition-transform group-hover:translate-x-0.5"
-              >
-                <path d="M3 7h8M8 4l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </a>
           </div>
         </Reveal>
 

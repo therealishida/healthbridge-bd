@@ -20,6 +20,7 @@ type Service = {
   slug: string;
   description: string | null;
   page_content: string | null;
+  hero_banner_url: string | null;
 };
 
 function BlockRenderer({ block }: { block: Block }) {
@@ -171,6 +172,12 @@ export default function ServicePage() {
             <>
               {/* Page header */}
               <div className="mb-10 border-b border-line/60 pb-8">
+                {service.hero_banner_url && (
+                  <div className="mb-8 overflow-hidden rounded-3xl border border-line/60">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={service.hero_banner_url} alt={service.title} className="max-h-[400px] w-full object-cover" />
+                  </div>
+                )}
                 <h1 className="font-display text-4xl font-medium leading-tight text-primary md:text-5xl">
                   {service.title}
                 </h1>

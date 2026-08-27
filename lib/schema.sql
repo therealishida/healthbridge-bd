@@ -63,6 +63,7 @@ CREATE TABLE IF NOT EXISTS services (
   slug         TEXT UNIQUE,
   description  TEXT,
   page_content TEXT,           -- JSON block array for service detail page
+  hero_banner_url TEXT,        -- Image URL for the service page hero banner
   enabled      BOOLEAN DEFAULT true,
   sort_order   INT DEFAULT 0,
   created_at   TIMESTAMPTZ DEFAULT now()
@@ -71,6 +72,7 @@ CREATE TABLE IF NOT EXISTS services (
 -- Migration: add slug + page_content columns if upgrading from previous schema
 ALTER TABLE services ADD COLUMN IF NOT EXISTS slug TEXT UNIQUE;
 ALTER TABLE services ADD COLUMN IF NOT EXISTS page_content TEXT;
+ALTER TABLE services ADD COLUMN IF NOT EXISTS hero_banner_url TEXT;
 
 -- Seed default services (idempotent via title uniqueness assumption)
 INSERT INTO services (title, description, sort_order) VALUES

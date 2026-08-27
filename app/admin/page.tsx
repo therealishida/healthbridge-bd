@@ -22,7 +22,7 @@ type Hospital = {
 };
 type Service = {
   id: number; title: string; slug: string | null; description: string;
-  page_content: string | null; enabled: boolean; sort_order: number; created_at: string;
+  page_content: string | null; hero_banner_url: string | null; enabled: boolean; sort_order: number; created_at: string;
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -481,6 +481,9 @@ function ServicesTab({ password }: { password: string }) {
   const [sTitle, setSTitle] = useState("");
   const [sDesc, setSDesc] = useState("");
   const [sSlug, setSSlug] = useState("");
+  const [sHeroBanner, setSHeroBanner] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -492,8 +495,8 @@ function ServicesTab({ password }: { password: string }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const openCreate = () => { setSTitle(""); setSDesc(""); setSSlug(""); setEditing(null); setCreating(true); };
-  const openEdit = (s: Service) => { setSTitle(s.title); setSDesc(s.description ?? ""); setSSlug(s.slug ?? slugify(s.title)); setEditing(s); setCreating(false); };
+  const openCreate = () => { setSTitle(""); setSDesc(""); setSSlug(""); setSHeroBanner(""); setEditing(null); setCreating(true); };
+  const openEdit = (s: Service) => { setSTitle(s.title); setSDesc(s.description ?? ""); setSSlug(s.slug ?? slugify(s.title)); setSHeroBanner(s.hero_banner_url ?? ""); setEditing(s); setCreating(false); };
   const cancelForm = () => { setCreating(false); setEditing(null); };
 
   // Auto-generate slug from title when creating
@@ -502,10 +505,33 @@ function ServicesTab({ password }: { password: string }) {
     if (!editing) setSSlug(slugify(val));
   };
 
+  const handleImageUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "x-admin-password": password },
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setSHeroBanner(data.url);
+      } else {
+        alert(data.error ?? "Upload failed");
+      }
+    } catch {
+      alert("Upload failed. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const save = async () => {
     if (!sTitle.trim()) return;
     setSaving(true);
-    const body = { title: sTitle, description: sDesc, enabled: true, sort_order: services.length, slug: sSlug || slugify(sTitle) };
+    const body = { title: sTitle, description: sDesc, enabled: true, sort_order: services.length, slug: sSlug || slugify(sTitle), hero_banner_url: sHeroBanner };
     if (editing) {
       await fetch(`/api/services/${editing.id}`, { method: "PUT", headers: { "Content-Type": "application/json", "x-admin-password": password }, body: JSON.stringify({ ...body, enabled: editing.enabled, page_content: editing.page_content }) });
     } else {
@@ -576,8 +602,57 @@ function ServicesTab({ password }: { password: string }) {
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Short Description</label>
             <textarea value={sDesc} onChange={(e) => setSDesc(e.target.value)} placeholder="Shown in nav dropdown and services section…" rows={2} className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
           </div>
-          <div className="flex gap-3">
-            <button onClick={save} disabled={saving} className="rounded-full bg-[#003265] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">{saving ? "Saving…" : "Save Service"}</button>
+          
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Hero Banner</label>
+            <div className="flex items-start gap-4">
+              <label className={`group flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-6 py-5 text-center transition-colors ${uploading ? "border-[#003265]/50 bg-[#003265]/5" : "border-[#E2E8F0] hover:border-[#003265]/40 hover:bg-[#F8F7F4]"}`}>
+                {uploading ? (
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#E2E8F0] border-t-[#003265]" />
+                ) : (
+                  <>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="mb-2 text-[#5A5A66]">
+                      <path d="M4 16l4-4 4 4 4-6 4 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <rect x="3" y="3" width="18" height="18" rx="3" stroke="currentColor" strokeWidth="1.5" />
+                    </svg>
+                    <span className="text-xs font-medium text-[#5A5A66] group-hover:text-[#003265]">
+                      {sHeroBanner ? "Replace banner" : "Upload banner"}
+                    </span>
+                    <span className="mt-0.5 text-[10px] text-[#5A5A66]">JPEG, PNG, WebP up to 8MB</span>
+                  </>
+                )}
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="sr-only"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleImageUpload(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+
+              {sHeroBanner && (
+                <div className="relative">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={sHeroBanner} alt="preview" className="h-28 w-48 rounded-xl border border-[#E2E8F0] object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setSHeroBanner("")}
+                    className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#ED1C24] text-[10px] text-white hover:opacity-80"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-2">
+            <button onClick={save} disabled={saving || uploading} className="rounded-full bg-[#003265] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">{saving ? "Saving…" : "Save Service"}</button>
             <button onClick={cancelForm} className="rounded-full border border-[#E2E8F0] px-6 py-2.5 text-sm text-[#5A5A66] hover:border-[#003265]">Cancel</button>
           </div>
         </div>

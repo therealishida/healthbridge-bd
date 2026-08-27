@@ -28,14 +28,15 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   try {
-    const { title, description, enabled, sort_order, page_content, slug } = await req.json();
+    const { title, description, enabled, sort_order, page_content, slug, hero_banner_url } = await req.json();
     const id = parseInt(params.id, 10);
     const { rows } = await sql`
       UPDATE services
       SET title = ${title}, description = ${description ?? null},
           enabled = ${enabled}, sort_order = ${sort_order ?? 0},
           page_content = ${page_content ?? null},
-          slug = ${slug ?? null}
+          slug = ${slug ?? null},
+          hero_banner_url = ${hero_banner_url ?? null}
       WHERE id = ${id}
       RETURNING *
     `;

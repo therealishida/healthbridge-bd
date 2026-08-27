@@ -29,14 +29,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
   try {
-    const { title, description, enabled, sort_order, page_content } = await req.json();
+    const { title, description, enabled, sort_order, page_content, hero_banner_url } = await req.json();
     if (!title) {
       return NextResponse.json({ error: 'title is required' }, { status: 400 });
     }
     const slug = slugify(title);
     const { rows } = await sql`
-      INSERT INTO services (title, slug, description, enabled, sort_order, page_content)
-      VALUES (${title}, ${slug}, ${description ?? null}, ${enabled ?? true}, ${sort_order ?? 0}, ${page_content ?? null})
+      INSERT INTO services (title, slug, description, enabled, sort_order, page_content, hero_banner_url)
+      VALUES (${title}, ${slug}, ${description ?? null}, ${enabled ?? true}, ${sort_order ?? 0}, ${page_content ?? null}, ${hero_banner_url ?? null})
       RETURNING *
     `;
     return NextResponse.json(rows[0]);
