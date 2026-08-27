@@ -1,15 +1,39 @@
 -- Run this once in the Supabase/Vercel Postgres query console after connecting your database.
 
 CREATE TABLE IF NOT EXISTS consultations (
-  id         SERIAL PRIMARY KEY,
-  name       TEXT NOT NULL,
-  phone      TEXT,
-  whatsapp   TEXT,
-  email      TEXT,
-  condition  TEXT,
-  message    TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
+  id                 SERIAL PRIMARY KEY,
+  name               TEXT NOT NULL,
+  phone              TEXT NOT NULL,
+  whatsapp           TEXT NOT NULL,
+  email              TEXT NOT NULL,
+  dob                TEXT NOT NULL,
+  gender             TEXT NOT NULL,
+  specialty          TEXT NOT NULL,
+  condition          TEXT NOT NULL,
+  destination        TEXT,
+  hospital_pref      TEXT,
+  medical_reports    TEXT, -- Base64
+  passport_copy      TEXT, -- Base64
+  assistance         JSONB DEFAULT '[]'::jsonb,
+  message            TEXT,
+  consent_accuracy   BOOLEAN DEFAULT false,
+  consent_processing BOOLEAN DEFAULT false,
+  consent_terms      BOOLEAN DEFAULT false,
+  created_at         TIMESTAMPTZ DEFAULT now()
 );
+
+-- Migration for existing table
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS dob TEXT;
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS gender TEXT;
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS specialty TEXT;
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS destination TEXT;
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS hospital_pref TEXT;
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS medical_reports TEXT;
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS passport_copy TEXT;
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS assistance JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS consent_accuracy BOOLEAN DEFAULT false;
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS consent_processing BOOLEAN DEFAULT false;
+ALTER TABLE consultations ADD COLUMN IF NOT EXISTS consent_terms BOOLEAN DEFAULT false;
 
 CREATE TABLE IF NOT EXISTS posts (
   id         SERIAL PRIMARY KEY,

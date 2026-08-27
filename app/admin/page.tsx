@@ -5,7 +5,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Submission = {
   id: number; name: string; phone: string; whatsapp: string;
-  email: string; condition: string; message: string; created_at: string;
+  email: string; dob: string; gender: string; specialty: string; condition: string;
+  destination: string | null; hospital_pref: string | null;
+  medical_reports: string | null; passport_copy: string | null;
+  assistance: string[]; message: string; created_at: string;
 };
 type Post = {
   id: number; title: string; slug: string; content: string;
@@ -893,11 +896,32 @@ function ConsultationsTab({ password }: { password: string }) {
           </button>
           {expanded === r.id && (
             <div className="grid grid-cols-1 gap-4 border-t border-[#E2E8F0] px-6 py-5 text-sm sm:grid-cols-2">
+              <div className="sm:col-span-2 border-b border-[#E2E8F0] pb-2 mb-2"><h4 className="font-semibold text-[#003265]">Patient Details</h4></div>
+              <Info label="Name" value={r.name} />
+              <Info label="DOB" value={r.dob} />
+              <Info label="Gender" value={r.gender} />
               <Info label="Phone" value={r.phone} />
               <Info label="WhatsApp" value={r.whatsapp} />
               <Info label="Email" value={r.email} />
+              
+              <div className="sm:col-span-2 border-b border-[#E2E8F0] pb-2 mb-2 mt-4"><h4 className="font-semibold text-[#003265]">Medical Info</h4></div>
+              <Info label="Specialty" value={r.specialty} />
               <Info label="Condition" value={r.condition} />
-              {r.message && <div className="sm:col-span-2"><Info label="Message" value={r.message} /></div>}
+              <Info label="Destination" value={r.destination || "-"} />
+              <Info label="Hospital Pref" value={r.hospital_pref || "-"} />
+              
+              <div className="sm:col-span-2 border-b border-[#E2E8F0] pb-2 mb-2 mt-4"><h4 className="font-semibold text-[#003265]">Assistance & Documents</h4></div>
+              <Info label="Assistance Required" value={Array.isArray(r.assistance) ? r.assistance.join(", ") : "-"} />
+              <div className="flex gap-4 sm:col-span-2">
+                {r.medical_reports && (
+                  <a href={r.medical_reports} download="Medical_Reports" className="text-xs font-semibold text-white bg-[#00B02A] px-3 py-1.5 rounded hover:bg-[#009020]">Download Medical Reports</a>
+                )}
+                {r.passport_copy && (
+                  <a href={r.passport_copy} download="Passport_Copy" className="text-xs font-semibold text-white bg-[#00B02A] px-3 py-1.5 rounded hover:bg-[#009020]">Download Passport</a>
+                )}
+              </div>
+
+              {r.message && <div className="sm:col-span-2 mt-4"><Info label="Message" value={r.message} /></div>}
             </div>
           )}
         </div>

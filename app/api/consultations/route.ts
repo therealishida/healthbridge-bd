@@ -4,15 +4,27 @@ import { NextRequest, NextResponse } from 'next/server';
 // POST /api/consultations — save a new form submission
 export async function POST(req: NextRequest) {
   try {
-    const { name, phone, whatsapp, email, condition, message } = await req.json();
+    const { 
+      name, phone, whatsapp, email, dob, gender, specialty, condition, 
+      destination, hospital_pref, medical_reports, passport_copy, 
+      assistance, message, consent_accuracy, consent_processing, consent_terms 
+    } = await req.json();
 
-    if (!name) {
-      return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+    if (!name || !phone || !email || !dob || !gender || !specialty || !condition || !medical_reports || !passport_copy || !consent_accuracy || !consent_processing || !consent_terms) {
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     await sql`
-      INSERT INTO consultations (name, phone, whatsapp, email, condition, message)
-      VALUES (${name}, ${phone ?? ''}, ${whatsapp ?? ''}, ${email ?? ''}, ${condition ?? ''}, ${message ?? ''})
+      INSERT INTO consultations (
+        name, phone, whatsapp, email, dob, gender, specialty, condition, 
+        destination, hospital_pref, medical_reports, passport_copy, 
+        assistance, message, consent_accuracy, consent_processing, consent_terms
+      )
+      VALUES (
+        ${name}, ${phone}, ${whatsapp ?? ''}, ${email}, ${dob}, ${gender}, ${specialty}, ${condition}, 
+        ${destination ?? ''}, ${hospital_pref ?? ''}, ${medical_reports}, ${passport_copy}, 
+        ${JSON.stringify(assistance ?? [])}, ${message ?? ''}, ${consent_accuracy}, ${consent_processing}, ${consent_terms}
+      )
     `;
 
     return NextResponse.json({ success: true });

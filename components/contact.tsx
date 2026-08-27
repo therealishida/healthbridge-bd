@@ -8,20 +8,47 @@ type Status = "idle" | "loading" | "success" | "error";
 export default function Contact() {
   const [status, setStatus] = useState<Status>("idle");
   const [form, setForm] = useState({
-    name: "", phone: "", whatsapp: "", email: "", condition: "", message: "",
+    name: "", phone: "", whatsapp: "", email: "", dob: "", gender: "",
+    specialty: "", condition: "", destination: "", hospital_pref: "", message: "",
+    consent_accuracy: false, consent_processing: false, consent_terms: false
   });
 
-  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
+  const [assistance, setAssistance] = useState<string[]>([]);
+  const assistanceOptions = ["Medical Visa", "Airport Transfer", "Accommodation", "Translation Services", "Air Ambulance"];
+
+  const [medicalReports, setMedicalReports] = useState("");
+  const [passportCopy, setPassportCopy] = useState("");
+
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.type === 'checkbox' ? (e.target as HTMLInputElement).checked : e.target.value }));
+
+  const toggleAssistance = (option: string) => {
+    setAssistance(prev => prev.includes(option) ? prev.filter(o => o !== option) : [...prev, option]);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string) => void) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    // Convert to base64
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => setter(reader.result as string);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!medicalReports || !passportCopy) {
+      alert("Please upload both your Medical Reports and Passport Copy.");
+      return;
+    }
+
     setStatus("loading");
     try {
       const res = await fetch("/api/consultations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, assistance, medical_reports: medicalReports, passport_copy: passportCopy }),
       });
       if (!res.ok) throw new Error();
       setStatus("success");
@@ -35,14 +62,14 @@ export default function Contact() {
       <div className="mx-auto max-w-6xl px-6">
         <Reveal>
           <h2 className="max-w-xl font-display text-3xl font-medium leading-tight text-primary md:text-5xl">
-            Start your medical journey
+            Book a Consultation
           </h2>
-          <p className="mt-4 max-w-md text-ink-muted">
-            A dedicated coordinator will respond with clear next steps, in Bangla or English.
+          <p className="mt-4 max-w-2xl text-ink-muted">
+            Provide your details below and a dedicated coordinator will respond with clear next steps.
           </p>
         </Reveal>
 
-        <div className="mt-16 grid grid-cols-1 gap-10 md:grid-cols-[0.8fr_1.2fr]">
+        <div className="mt-16 grid grid-cols-1 gap-10 lg:grid-cols-[0.3fr_0.7fr]">
           <Reveal className="space-y-4">
             <div className="rounded-xl border border-line/60 bg-bg p-6">
               <div className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Office</div>
@@ -69,24 +96,63 @@ export default function Contact() {
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </div>
-                <h3 className="font-display text-xl text-primary">Request received</h3>
+                <h3 className="font-display text-xl text-primary">Booking received</h3>
                 <p className="mt-2 max-w-xs text-sm text-ink-muted">
-                  Your coordinator will reach out within 24–48 hours. For urgent needs, call us directly.
+                  Your coordinator will reach out within 24–48 hours to confirm your consultation.
                 </p>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="rounded-2xl border border-line/60 bg-bg p-8">
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                  <Field label="Name" placeholder="Your full name" value={form.name} onChange={set("name")} required />
-                  <Field label="Phone Number" placeholder="+880 ..." type="tel" value={form.phone} onChange={set("phone")} />
-                  <Field label="WhatsApp Number" placeholder="+880 ..." type="tel" value={form.whatsapp} onChange={set("whatsapp")} />
-                  <Field label="Email" placeholder="you@email.com" type="email" value={form.email} onChange={set("email")} />
+              <form onSubmit={handleSubmit} className="rounded-2xl border border-line/60 bg-bg p-8 space-y-10">
+                
+                {/* 1. Patient Details */}
+                <div>
+                  <h3 className="text-lg font-semibold text-primary mb-4 border-b border-line pb-2">1. Patient Details</h3>
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <Field label="Full Name *" placeholder="Your full name" value={form.name} onChange={set("name")} required />
+                    <Field label="Mobile / WhatsApp Number *" placeholder="+880 ..." type="tel" value={form.phone} onChange={set("phone")} required />
+                    <Field label="Email Address *" placeholder="you@email.com" type="email" value={form.email} onChange={set("email")} required />
+                    <Field label="Date of Birth *" placeholder="YYYY-MM-DD" type="date" value={form.dob} onChange={set("dob")} required />
+                    <SelectField label="Gender *" value={form.gender} onChange={set("gender")} required options={["", "Male", "Female", "Other"]} />
+                  </div>
                 </div>
-                <div className="mt-5">
-                  <Field label="Medical Condition" placeholder="Briefly describe your condition" value={form.condition} onChange={set("condition")} />
+
+                {/* 2. Medical Information */}
+                <div>
+                  <h3 className="text-lg font-semibold text-primary mb-4 border-b border-line pb-2">2. Medical Information</h3>
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <Field label="Medical Specialty / Department *" placeholder="e.g. Cardiology" value={form.specialty} onChange={set("specialty")} required />
+                    <Field label="Medical Condition / Diagnosis *" placeholder="Briefly describe" value={form.condition} onChange={set("condition")} required />
+                    <Field label="Preferred Destination" placeholder="e.g. Thailand, India" value={form.destination} onChange={set("destination")} />
+                    <Field label="Preferred Hospital" placeholder="e.g. Bumrungrad" value={form.hospital_pref} onChange={set("hospital_pref")} />
+                  </div>
                 </div>
-                <div className="mt-5">
-                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-ink-muted">Message</label>
+
+                {/* 3. Required Documents */}
+                <div>
+                  <h3 className="text-lg font-semibold text-primary mb-4 border-b border-line pb-2">3. Required Documents</h3>
+                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                    <FileField label="Upload Medical Reports *" onChange={(e) => handleFileUpload(e, setMedicalReports)} uploaded={!!medicalReports} />
+                    <FileField label="Upload Passport Copy / NID *" onChange={(e) => handleFileUpload(e, setPassportCopy)} uploaded={!!passportCopy} />
+                  </div>
+                </div>
+
+                {/* 4. Assistance Required */}
+                <div>
+                  <h3 className="text-lg font-semibold text-primary mb-4 border-b border-line pb-2">4. Assistance Required *</h3>
+                  <div className="flex flex-wrap gap-4">
+                    {assistanceOptions.map(opt => (
+                      <label key={opt} className="flex items-center gap-2 text-sm text-ink cursor-pointer">
+                        <input type="checkbox" checked={assistance.includes(opt)} onChange={() => toggleAssistance(opt)} className="rounded border-line/60 text-primary focus:ring-primary h-4 w-4" />
+                        {opt}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 5. Additional Information */}
+                <div>
+                  <h3 className="text-lg font-semibold text-primary mb-4 border-b border-line pb-2">5. Additional Information</h3>
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-ink-muted">Message / Extra Info</label>
                   <textarea
                     rows={3}
                     placeholder="Anything else we should know?"
@@ -95,15 +161,27 @@ export default function Contact() {
                     className="w-full rounded-lg border border-line/60 bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none"
                   />
                 </div>
+
+                {/* 6. Consent */}
+                <div>
+                  <h3 className="text-lg font-semibold text-primary mb-4 border-b border-line pb-2">6. Consent *</h3>
+                  <div className="space-y-3">
+                    <CheckboxField label="I confirm that the information provided is accurate." checked={form.consent_accuracy} onChange={set("consent_accuracy")} required />
+                    <CheckboxField label="I consent to my data being processed and shared with medical facilities." checked={form.consent_processing} onChange={set("consent_processing")} required />
+                    <CheckboxField label="I agree to the Privacy Policy and Terms of Service." checked={form.consent_terms} onChange={set("consent_terms")} required />
+                  </div>
+                </div>
+
                 {status === "error" && (
                   <p className="mt-3 text-xs text-alert-red">Something went wrong. Please try again or contact us directly.</p>
                 )}
+                
                 <button
                   type="submit"
                   disabled={status === "loading"}
-                  className="mt-7 w-full rounded-full bg-accent py-3.5 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 disabled:opacity-60"
+                  className="w-full rounded-full bg-accent py-4 text-sm font-semibold text-white transition-all hover:-translate-y-0.5 disabled:opacity-60 mt-4"
                 >
-                  {status === "loading" ? "Sending…" : "Get Free Consultation"}
+                  {status === "loading" ? "Submitting..." : "Submit Consultation Request"}
                 </button>
               </form>
             )}
@@ -114,23 +192,43 @@ export default function Contact() {
   );
 }
 
-function Field({
-  label, placeholder, type = "text", value, onChange, required,
-}: {
-  label: string; placeholder: string; type?: string;
-  value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; required?: boolean;
-}) {
+function Field({ label, placeholder, type = "text", value, onChange, required }: any) {
   return (
     <div>
       <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</label>
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        required={required}
-        className="w-full rounded-lg border border-line/60 bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none"
-      />
+      <input type={type} placeholder={placeholder} value={value} onChange={onChange} required={required} className="w-full rounded-lg border border-line/60 bg-surface px-4 py-3 text-sm text-ink placeholder:text-ink-muted focus:border-primary focus:outline-none" />
     </div>
+  );
+}
+
+function SelectField({ label, value, onChange, required, options }: any) {
+  return (
+    <div>
+      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</label>
+      <select value={value} onChange={onChange} required={required} className="w-full rounded-lg border border-line/60 bg-surface px-4 py-3 text-sm text-ink focus:border-primary focus:outline-none">
+        {options.map((opt: string) => <option key={opt} value={opt} disabled={opt === ""}>{opt === "" ? "Select Option" : opt}</option>)}
+      </select>
+    </div>
+  );
+}
+
+function FileField({ label, onChange, uploaded }: any) {
+  return (
+    <div>
+      <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</label>
+      <div className="relative">
+        <input type="file" accept="image/*,application/pdf" onChange={onChange} className="w-full cursor-pointer rounded-lg border border-line/60 bg-surface px-4 py-2.5 text-sm text-ink file:mr-4 file:rounded-full file:border-0 file:bg-primary/10 file:px-4 file:py-1 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20" />
+        {uploaded && <span className="absolute right-4 top-3 text-xs font-bold text-[#00B02A]">✓ Uploaded</span>}
+      </div>
+    </div>
+  );
+}
+
+function CheckboxField({ label, checked, onChange, required }: any) {
+  return (
+    <label className="flex items-start gap-3 text-sm text-ink cursor-pointer">
+      <input type="checkbox" checked={checked} onChange={onChange} required={required} className="mt-1 rounded border-line/60 text-primary focus:ring-primary h-4 w-4 shrink-0" />
+      <span className="leading-snug">{label}</span>
+    </label>
   );
 }
