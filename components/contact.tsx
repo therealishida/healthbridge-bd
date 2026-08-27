@@ -209,8 +209,8 @@ function FileField({ label, onChange, uploaded }: { label: string; onChange: (e:
     <div>
       <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</label>
       <div className="relative">
-        <input type="file" accept="image/*,application/pdf" onChange={onChange} className="w-full cursor-pointer rounded-lg border border-line/60 bg-surface px-4 py-2.5 text-sm text-ink file:mr-4 file:rounded-full file:border-0 file:bg-primary/10 file:px-4 file:py-1 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20" />
-        {uploaded && <span className="absolute right-4 top-3 text-xs font-bold text-[#00B02A]">✓ Uploaded</span>}
+        <input type="file" accept="image/*,application/pdf" onChange={onChange} className="w-full pr-24 cursor-pointer rounded-lg border border-line/60 bg-surface px-4 py-2.5 text-sm text-ink file:mr-4 file:rounded-full file:border-0 file:bg-primary/10 file:px-4 file:py-1 file:text-xs file:font-semibold file:text-primary hover:file:bg-primary/20" />
+        {uploaded && <span className="absolute right-4 top-3 text-xs font-bold text-[#00B02A] bg-surface pl-2">✓ Uploaded</span>}
       </div>
     </div>
   );

@@ -56,14 +56,14 @@ export async function POST(req: NextRequest) {
         <p><strong>Message:</strong> ${message || 'None'}</p>
       `;
 
-      await fetch('https://api.resend.com/emails', {
+      const emailRes = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${resendApiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          from: 'HealthBridge <noreply@healthbridge-tgv.com>',
+          from: 'onboarding@resend.dev',
           to: [toEmail],
           subject: `New Consultation Request: ${name}`,
           html: htmlContent,
@@ -79,6 +79,12 @@ export async function POST(req: NextRequest) {
           ]
         })
       });
+
+      if (!emailRes.ok) {
+        const errText = await emailRes.text();
+        console.error("Resend API Error:", errText);
+        throw new Error("Failed to send email");
+      }
     }
 
     return NextResponse.json({ success: true });
