@@ -27,6 +27,10 @@ type Service = {
   id: number; title: string; slug: string | null; description: string;
   page_content: string | null; hero_banner_url: string | null; enabled: boolean; sort_order: number; created_at: string;
 };
+type FAQ = {
+  id: number; question: string; answer: string;
+  enabled: boolean; sort_order: number; created_at: string;
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function slugify(s: string) {
@@ -88,16 +92,17 @@ function PasswordGate({ onSubmit, pw, setPw, error }: {
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-type Tab = "general" | "consultations" | "blog" | "hospitals" | "services";
+type Tab = "testimonials" | "consultations" | "blog" | "hospitals" | "services" | "faq";
 
 function Dashboard({ password, onLogout }: { password: string; onLogout: () => void }) {
-  const [tab, setTab] = useState<Tab>("general");
+  const [tab, setTab] = useState<Tab>("testimonials");
   const tabs: { id: Tab; label: string }[] = [
-    { id: "general",       label: "General" },
+    { id: "testimonials", label: "Testimonials" },
     { id: "consultations", label: "Consultations" },
-    { id: "blog",          label: "Blog Posts" },
-    { id: "hospitals",     label: "Hospitals" },
-    { id: "services",      label: "Services" },
+    { id: "blog", label: "Blog Posts" },
+    { id: "hospitals", label: "Hospitals" },
+    { id: "services", label: "Services" },
+    { id: "faq", label: "FAQs" },
   ];
   return (
     <div className="min-h-screen bg-[#F8F7F4]">
@@ -110,7 +115,7 @@ function Dashboard({ password, onLogout }: { password: string; onLogout: () => v
                 <path d="M6 17V9M18 17V9" stroke="#00B02A" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </span>
-            <span className="text-lg font-semibold text-[#003265]">Admin Panel</span>
+            <span className="text-lg font-semibold text-[#003265]">HealthBridge Admin Panel</span>
           </div>
           <button onClick={onLogout} className="rounded-full border border-[#E2E8F0] px-4 py-1.5 text-xs text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]">Sign out</button>
         </div>
@@ -123,18 +128,19 @@ function Dashboard({ password, onLogout }: { password: string; onLogout: () => v
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-6 py-10">
-        {tab === "general"       && <GeneralTab password={password} />}
+        {tab === "testimonials" && <TestimonialsTab password={password} />}
         {tab === "consultations" && <ConsultationsTab password={password} />}
-        {tab === "blog"          && <BlogTab password={password} />}
-        {tab === "hospitals"     && <HospitalsTab password={password} />}
-        {tab === "services"      && <ServicesTab password={password} />}
+        {tab === "blog" && <BlogTab password={password} />}
+        {tab === "hospitals" && <HospitalsTab password={password} />}
+        {tab === "services" && <ServicesTab password={password} />}
+        {tab === "faq" && <FaqTab password={password} />}
       </main>
     </div>
   );
 }
 
-// ─── General Tab ──────────────────────────────────────────────────────────────
-function GeneralTab({ password }: { password: string }) {
+// ─── Testimonials Tab ──────────────────────────────────────────────────────────────
+function TestimonialsTab({ password }: { password: string }) {
   const [testimonialsVisible, setTestimonialsVisible] = useState(true);
   const [settingLoading, setSettingLoading] = useState(true);
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -258,6 +264,160 @@ function GeneralTab({ password }: { password: string }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ─── FAQs Tab ─────────────────────────────────────────────────────────────────
+function FaqTab({ password }: { password: string }) {
+  const [faqs, setFaqs] = useState<FAQ[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<FAQ | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch("/api/faqs", { headers: { "x-admin-password": password } });
+    const data = await res.json();
+    setFaqs(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, [password]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openCreate = () => { setQuestion(""); setAnswer(""); setEditing(null); setCreating(true); };
+  const openEdit = (f: FAQ) => { setQuestion(f.question); setAnswer(f.answer); setEditing(f); setCreating(false); };
+  const cancelForm = () => { setCreating(false); setEditing(null); };
+
+  const save = async () => {
+    if (!question.trim() || !answer.trim()) return;
+    setSaving(true);
+    const body = { question, answer, enabled: true, sort_order: faqs.length };
+    if (editing) {
+      await fetch(`/api/faqs/${editing.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify({ ...body, enabled: editing.enabled }),
+      });
+    } else {
+      await fetch("/api/faqs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify(body),
+      });
+    }
+    setSaving(false); cancelForm(); load();
+  };
+
+  const toggle = async (f: FAQ) => {
+    await fetch(`/api/faqs/${f.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-password": password },
+      body: JSON.stringify({ ...f, enabled: !f.enabled }),
+    });
+    load();
+  };
+
+  const move = async (f: FAQ, dir: "up" | "down") => {
+    const idx = faqs.findIndex((x) => x.id === f.id);
+    if (dir === "up" && idx === 0) return;
+    if (dir === "down" && idx === faqs.length - 1) return;
+    const other = faqs[dir === "up" ? idx - 1 : idx + 1];
+    await Promise.all([
+      fetch(`/api/faqs/${f.id}`, { method: "PUT", headers: { "Content-Type": "application/json", "x-admin-password": password }, body: JSON.stringify({ ...f, sort_order: other.sort_order }) }),
+      fetch(`/api/faqs/${other.id}`, { method: "PUT", headers: { "Content-Type": "application/json", "x-admin-password": password }, body: JSON.stringify({ ...other, sort_order: f.sort_order }) }),
+    ]);
+    load();
+  };
+
+  const deleteFaq = async (id: number) => {
+    if (!confirm("Delete this FAQ?")) return;
+    await fetch(`/api/faqs/${id}`, { method: "DELETE", headers: { "x-admin-password": password } });
+    load();
+  };
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-[#003265]">Frequently Asked Questions</h3>
+          <p className="mt-0.5 text-sm text-[#5A5A66]">Manage the Q&A items displayed in the FAQ section on the homepage.</p>
+        </div>
+        {!creating && !editing && (
+          <button onClick={openCreate} className="rounded-full bg-[#003265] px-5 py-2 text-sm font-semibold text-white hover:opacity-90">
+            + Add FAQ
+          </button>
+        )}
+      </div>
+
+      {(creating || editing) && (
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-7 space-y-4">
+          <h4 className="font-semibold text-[#003265]">{editing ? "Edit FAQ" : "New FAQ"}</h4>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Question *</label>
+            <input
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="e.g. Do I need a visa to travel to Thailand for treatment?"
+              className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Answer *</label>
+            <textarea
+              value={answer}
+              onChange={(e) => setAnswer(e.target.value)}
+              placeholder="Provide a clear, detailed answer..."
+              rows={4}
+              className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none"
+            />
+          </div>
+
+          <div className="flex gap-3 mt-2">
+            <button
+              onClick={save}
+              disabled={saving}
+              className="rounded-full bg-[#003265] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+            >
+              {saving ? "Saving…" : "Save FAQ"}
+            </button>
+            <button
+              onClick={cancelForm}
+              className="rounded-full border border-[#E2E8F0] px-6 py-2.5 text-sm text-[#5A5A66] hover:border-[#003265]"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? <Spinner /> : faqs.length === 0 ? <Empty text="No FAQs yet. Add your first question." /> : (
+        <div className="space-y-3">
+          {faqs.map((f, i) => (
+            <div key={f.id} className="flex items-start gap-4 rounded-xl border border-[#E2E8F0] bg-white p-5">
+              <div className="flex flex-col gap-0.5 pt-0.5">
+                <button onClick={() => move(f, "up")} disabled={i === 0} className="text-[10px] text-[#5A5A66] hover:text-[#003265] disabled:opacity-30">▲</button>
+                <button onClick={() => move(f, "down")} disabled={i === faqs.length - 1} className="text-[10px] text-[#5A5A66] hover:text-[#003265] disabled:opacity-30">▼</button>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[#003265]">{f.question}</p>
+                <p className="mt-1.5 text-xs leading-relaxed text-[#5A5A66]">{f.answer}</p>
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <button onClick={() => toggle(f)} className={`rounded-full px-3 py-1 text-xs font-semibold ${f.enabled ? "bg-[#00B02A]/10 text-[#00B02A]" : "bg-[#E2E8F0] text-[#5A5A66]"}`}>
+                  {f.enabled ? "Visible" : "Hidden"}
+                </button>
+                <button onClick={() => openEdit(f)} className="text-xs text-[#5A5A66] underline hover:text-[#003265]">Edit</button>
+                <button onClick={() => deleteFaq(f.id)} className="text-xs text-[#ED1C24] hover:underline">Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -605,7 +765,7 @@ function ServicesTab({ password }: { password: string }) {
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Short Description</label>
             <textarea value={sDesc} onChange={(e) => setSDesc(e.target.value)} placeholder="Shown in nav dropdown and services section…" rows={2} className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
           </div>
-          
+
           <div>
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Hero Banner</label>
             <div className="flex items-start gap-4">
@@ -708,7 +868,7 @@ function ServicePageEditor({
   const [error, setError] = useState("");
   const [blocks, setBlocks] = useState<any[]>(() => {
     if (service.page_content) {
-      try { const p = JSON.parse(service.page_content); if (Array.isArray(p)) return p; } catch {}
+      try { const p = JSON.parse(service.page_content); if (Array.isArray(p)) return p; } catch { }
     }
     return [{ type: "paragraph", value: "" }];
   });
@@ -903,13 +1063,13 @@ function ConsultationsTab({ password }: { password: string }) {
               <Info label="Phone" value={r.phone} />
               <Info label="WhatsApp" value={r.whatsapp} />
               <Info label="Email" value={r.email} />
-              
+
               <div className="sm:col-span-2 border-b border-[#E2E8F0] pb-2 mb-2 mt-4"><h4 className="font-semibold text-[#003265]">Medical Info</h4></div>
               <Info label="Specialty" value={r.specialty} />
               <Info label="Condition" value={r.condition} />
               <Info label="Destination" value={r.destination || "-"} />
               <Info label="Hospital Pref" value={r.hospital_pref || "-"} />
-              
+
               <div className="sm:col-span-2 border-b border-[#E2E8F0] pb-2 mb-2 mt-4"><h4 className="font-semibold text-[#003265]">Assistance & Documents</h4></div>
               <Info label="Assistance Required" value={Array.isArray(r.assistance) ? r.assistance.join(", ") : "-"} />
               <div className="flex gap-4 sm:col-span-2">
@@ -1010,7 +1170,7 @@ function PostEditor({ password, initial, onSave, onCancel }: { password: string;
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [blocks, setBlocks] = useState<any[]>(() => {
-    if (initial?.content) { try { const p = JSON.parse(initial.content); if (Array.isArray(p)) return p; } catch {} return [{ type: "paragraph", value: initial.content }]; }
+    if (initial?.content) { try { const p = JSON.parse(initial.content); if (Array.isArray(p)) return p; } catch { } return [{ type: "paragraph", value: initial.content }]; }
     return [{ type: "paragraph", value: "" }];
   });
 

@@ -109,3 +109,22 @@ INSERT INTO services (title, description, sort_order) VALUES
   ('Air Ambulance',                'Emergency or scheduled air medical transport, coordinated end-to-end.',                    6),
   ('Tourism Package',              'Combine medical care with a curated travel experience in your destination country.',       7)
 ON CONFLICT DO NOTHING;
+
+-- ─── FAQs ────────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS faqs (
+  id         SERIAL PRIMARY KEY,
+  question   TEXT NOT NULL,
+  answer     TEXT NOT NULL,
+  enabled    BOOLEAN DEFAULT true,
+  sort_order INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+INSERT INTO faqs (question, answer, sort_order) VALUES
+  ('How do I start the treatment process from Bangladesh?', 'Submit a free consultation request with your condition and reports. Your coordinator responds within 24–48 hours, and our support line is available 24/7 for urgent queries.', 0),
+  ('Do I need a visa to travel to Thailand for treatment?', 'Yes, most patients need a medical visa. We assist with the entire process, including the hospital''s invitation letter.', 1),
+  ('Can I get a second medical opinion without traveling?', 'Yes — upload your reports and a partner doctor provides a written second opinion via telemedicine before you decide to travel.', 2),
+  ('What is included in the cost estimate?', 'Estimates typically cover treatment or surgery. Accommodation, transfers and visa assistance are quoted separately as optional add-ons.', 3),
+  ('Is an interpreter available at the hospital?', 'Yes — Bengali and English-speaking interpreters are arranged for every consultation and hospital visit.', 4)
+ON CONFLICT DO NOTHING;
+

@@ -7,10 +7,10 @@ import logoImg from "@/brandassets/logo-cropped.png";
 type Service = { id: number; title: string; slug: string | null; description: string | null };
 
 const staticLinks = [
-  { href: "#about", label: "About" },
-  { href: "#hospitals", label: "Hospitals" },
+  { href: "/#about", label: "About" },
+  { href: "/hospitals", label: "Hospitals" },
   { href: "/blog", label: "Blog" },
-  { href: "#contact", label: "Contact" },
+  { href: "/#contact", label: "Contact" },
 ];
 
 export default function Nav() {
@@ -65,7 +65,7 @@ export default function Nav() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 md:flex">
-          <a href="#about" className="text-sm text-ink-muted transition-colors hover:text-ink">About</a>
+          <a href="/#about" className="text-sm text-ink-muted transition-colors hover:text-ink">About</a>
 
           {/* Services — hover dropdown */}
           <div
@@ -75,7 +75,7 @@ export default function Nav() {
             onMouseLeave={handleServicesMouseLeave}
           >
             <a
-              href="#services"
+              href="/#services"
               className="flex items-center gap-1 text-sm text-ink-muted transition-colors hover:text-ink"
               onClick={(e) => { e.preventDefault(); setServicesOpen((v) => !v); }}
             >
@@ -98,7 +98,7 @@ export default function Nav() {
                   {services.map((s) => (
                     <a
                       key={s.id}
-                      href={s.slug ? `/services/${s.slug}` : "#services"}
+                      href={s.slug ? `/services/${s.slug}` : "/#services"}
                       className="block rounded-lg px-4 py-2.5 transition-colors hover:bg-bg"
                       onClick={() => setServicesOpen(false)}
                     >
@@ -113,19 +113,19 @@ export default function Nav() {
             )}
           </div>
 
-          <a href="#hospitals" className="text-sm text-ink-muted transition-colors hover:text-ink">Hospitals</a>
+          <a href="/hospitals" className="text-sm text-ink-muted transition-colors hover:text-ink">Hospitals</a>
 
           {/* Stories — conditionally shown based on testimonials_visible setting */}
           {showStories && (
-            <a href="#stories" className="text-sm text-ink-muted transition-colors hover:text-ink">Stories</a>
+            <a href="/#stories" className="text-sm text-ink-muted transition-colors hover:text-ink">Stories</a>
           )}
 
           <a href="/blog" className="text-sm text-ink-muted transition-colors hover:text-ink">Blog</a>
-          <a href="#contact" className="text-sm text-ink-muted transition-colors hover:text-ink">Contact</a>
+          <a href="/#contact" className="text-sm text-ink-muted transition-colors hover:text-ink">Contact</a>
         </nav>
 
         <a
-          href="#contact"
+          href="/#contact"
           className="hidden rounded-full border border-accent/40 px-5 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent hover:text-bg md:block"
         >
           Book Consultation
@@ -141,7 +141,7 @@ export default function Nav() {
       {/* Mobile menu */}
       {open && (
         <div className="flex flex-col gap-1 border-t border-line/60 px-6 py-4 md:hidden">
-          <a href="#about" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>About</a>
+          <a href="/#about" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>About</a>
 
           {/* Services expandable */}
           <div>
@@ -159,7 +159,7 @@ export default function Nav() {
                 {services.map((s) => (
                   <a
                     key={s.id}
-                    href={s.slug ? `/services/${s.slug}` : "#services"}
+                    href={s.slug ? `/services/${s.slug}` : "/#services"}
                     className="block py-1.5 text-sm text-ink-muted"
                     onClick={() => setOpen(false)}
                   >
@@ -170,15 +170,15 @@ export default function Nav() {
             )}
           </div>
 
-          <a href="#hospitals" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Hospitals</a>
+          <a href="/hospitals" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Hospitals</a>
 
           {/* Stories — conditional */}
           {showStories && (
-            <a href="#stories" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Stories</a>
+            <a href="/#stories" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Stories</a>
           )}
 
           <a href="/blog" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Blog</a>
-          <a href="#contact" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Contact</a>
+          <a href="/#contact" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Contact</a>
         </div>
       )}
     </header>

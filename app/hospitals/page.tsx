@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import logoImg from "@/brandassets/logo-cropped.png";
 import Link from "next/link";
+import Nav from "@/components/nav";
+import Footer from "@/components/footer";
+import TradeAxisBadge from "@/components/tradeaxis-badge";
 
 type Hospital = {
   id: number;
@@ -33,22 +34,9 @@ export default function HospitalsPage() {
 
   return (
     <>
-      {/* Minimal page header */}
-      <header className="border-b border-line/60 bg-bg/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          <Link href="/" className="flex items-center">
-            <Image src={logoImg} alt="HealthBridge" height={36} className="h-9 w-auto" />
-          </Link>
-          <Link
-            href="/#contact"
-            className="rounded-full border border-accent/40 px-5 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent hover:text-bg"
-          >
-            Book Consultation
-          </Link>
-        </div>
-      </header>
+      <Nav />
 
-      <main className="min-h-screen bg-bg pt-16 pb-28">
+      <main className="min-h-screen bg-bg pt-28 pb-28">
         <div className="mx-auto max-w-6xl px-6">
 
           {/* Page heading */}
@@ -166,6 +154,9 @@ export default function HospitalsPage() {
           )}
         </div>
       </main>
+
+      <Footer />
+      <TradeAxisBadge />
     </>
   );
 }
