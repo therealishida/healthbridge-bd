@@ -16,15 +16,15 @@ export default async function Footer() {
   return (
     <footer className="border-t border-line/60 bg-bg pt-20 pb-10">
       <div className="mx-auto max-w-6xl px-6 grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-20">
-        
+
         {/* Logo & Company Info */}
         <div className="md:col-span-4 lg:col-span-3">
           <Link href="/">
             <Image
               src={logoImg}
               alt="HealthBridge logo"
-              height={40}
-              className="h-10 w-auto mb-6"
+              height={80}
+              className="h-20 w-auto mb-6"
             />
           </Link>
           <p className="text-sm text-ink-muted leading-relaxed">
@@ -64,16 +64,16 @@ export default async function Footer() {
         <div className="md:col-span-4 lg:col-span-5">
           <h4 className="text-sm font-semibold text-primary mb-4 uppercase tracking-widest">Office Location</h4>
           <p className="text-sm text-ink-muted mb-4">
-            10 Soi Sukhumvit 13, Khlong Toei Nuea, Watthana District, Bangkok 10110, Thailand
+            1/1 Pioneer Road, Kakrail (Ramna), Dhaka-1000, Bangladesh
           </p>
           <div className="h-48 w-full rounded-xl overflow-hidden border border-line/60">
-            <iframe 
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3875.568285514088!2d100.5562725114562!3d13.744549497973747!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x30e29ee21fdd0fc9%3A0xc02cf97b102b36dc!2s10%20Soi%20Sukhumvit%2013%2C%20Khwaeng%20Khlong%20Toei%20Nuea%2C%20Khet%20Watthana%2C%20Krung%20Thep%20Maha%20Nakhon%2010110%2C%20Thailand!5e0!3m2!1sen!2s!4v1714404322421!5m2!1sen!2s" 
-              width="100%" 
-              height="100%" 
-              style={{ border: 0 }} 
-              allowFullScreen={false} 
-              loading="lazy" 
+            <iframe
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3652.310321293947!2d90.40369347592728!3d23.73631088931592!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3755b8f309a7036d%3A0x58e11e602541020a!2sYMCA!5e0!3m2!1sen!2sbd!4v1788363132766!5m2!1sen!2sbd"
+              width="100%"
+              height="100%"
+              style={{ border: 0 }}
+              allowFullScreen={false}
+              loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             ></iframe>
           </div>
@@ -82,7 +82,7 @@ export default async function Footer() {
 
       <div className="mx-auto max-w-6xl px-6 mt-16 pt-8 border-t border-line/60 flex flex-col sm:flex-row justify-between items-center gap-4">
         <p className="text-xs text-ink-muted">
-          © {new Date().getFullYear()} HealthBridge. All rights reserved.
+          © {new Date().getFullYear()} HealthBridge by TradeAxis Global Ventures. All rights reserved.
         </p>
       </div>
     </footer>
