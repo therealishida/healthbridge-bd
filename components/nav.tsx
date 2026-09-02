@@ -7,10 +7,10 @@ import logoImg from "@/brandassets/logo-cropped.png";
 type Service = { id: number; title: string; slug: string | null; description: string | null };
 
 const staticLinks = [
-  { href: "#about",    label: "About" },
+  { href: "#about", label: "About" },
   { href: "#hospitals", label: "Hospitals" },
-  { href: "/blog",     label: "Blog" },
-  { href: "#contact",  label: "Contact" },
+  { href: "/blog", label: "Blog" },
+  { href: "#contact", label: "Contact" },
 ];
 
 export default function Nav() {
@@ -60,7 +60,7 @@ export default function Nav() {
     <header className="fixed top-0 z-50 w-full border-b border-line/60 bg-bg/70 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <a href="/" className="flex items-center">
-          <Image src={logoImg} alt="HealthBridge logo" height={40} className="h-10 w-auto" />
+          <Image src={logoImg} alt="HealthBridge logo" height={56} className="h-14 w-auto" />
         </a>
 
         {/* Desktop nav */}

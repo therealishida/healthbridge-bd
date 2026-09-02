@@ -43,7 +43,9 @@ export default function Hero() {
           transition={{ duration: 0.7, delay: 0.7 }}
           className="mt-6 max-w-lg text-base leading-relaxed text-blue-100/90 md:text-lg"
         >
-          Your dedicated medical coordinator — from hospital selection and visa support to on-ground care and full recovery.
+          Navigating medical treatment abroad can involve many important decisions—from selecting a hospital and communicating with specialists to arranging appointments, travel and local support.
+          HealthBridge by TradeAxis Global Ventures helps make that journey more organized and easier to navigate.
+          We connect patients and families from Bangladesh with our partner hospitals while coordinating the essential non-clinical steps surrounding their medical journey.
         </motion.p>
 
         <motion.div

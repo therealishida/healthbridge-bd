@@ -27,8 +27,8 @@ export default function About() {
               <Image
                 src={logoImg}
                 alt="HealthBridge logo"
-                height={120}
-                className="h-24 w-auto md:h-32"
+                height={240}
+                className="h-48 w-auto md:h-64"
               />
             </div>
           </div>
