@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const admin = isAdmin(req);
     const { rows } = admin
       ? await sql`SELECT * FROM services ORDER BY sort_order ASC, created_at ASC`
-      : await sql`SELECT id, title, slug, description FROM services WHERE enabled = true ORDER BY sort_order ASC, created_at ASC`;
+      : await sql`SELECT id, title, slug, description, hero_banner_url FROM services WHERE enabled = true ORDER BY sort_order ASC, created_at ASC`;
     return NextResponse.json(rows);
   } catch (err) {
     console.error('Services fetch error:', err);
