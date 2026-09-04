@@ -9,6 +9,7 @@ type Service = { id: number; title: string; slug: string | null; description: st
 const staticLinks = [
   { href: "/#about", label: "About" },
   { href: "/hospitals", label: "Hospitals" },
+  { href: "/tourism-packages", label: "Tourism Packages" },
   { href: "/blog", label: "Blog" },
   { href: "/#contact", label: "Contact" },
 ];
@@ -114,6 +115,7 @@ export default function Nav() {
           </div>
 
           <a href="/hospitals" className="text-sm text-ink-muted transition-colors hover:text-ink">Hospitals</a>
+          <a href="/tourism-packages" className="text-sm text-ink-muted transition-colors hover:text-ink">Tourism Packages</a>
 
           {/* Stories — conditionally shown based on testimonials_visible setting */}
           {showStories && (
@@ -171,6 +173,7 @@ export default function Nav() {
           </div>
 
           <a href="/hospitals" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Hospitals</a>
+          <a href="/tourism-packages" className="py-2 text-sm text-ink-muted" onClick={() => setOpen(false)}>Tourism Packages</a>
 
           {/* Stories — conditional */}
           {showStories && (

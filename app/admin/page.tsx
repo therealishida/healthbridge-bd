@@ -27,6 +27,12 @@ type Service = {
   id: number; title: string; slug: string | null; description: string;
   page_content: string | null; hero_banner_url: string | null; enabled: boolean; sort_order: number; created_at: string;
 };
+type TourismPackage = {
+  id: number; title: string; slug: string | null; description: string;
+  image_url: string | null; hero_banner_url: string | null;
+  duration: string | null; destination: string | null; price: string | null;
+  page_content: string | null; enabled: boolean; sort_order: number; created_at: string;
+};
 type FAQ = {
   id: number; question: string; answer: string;
   enabled: boolean; sort_order: number; created_at: string;
@@ -92,7 +98,7 @@ function PasswordGate({ onSubmit, pw, setPw, error }: {
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
-type Tab = "testimonials" | "consultations" | "blog" | "hospitals" | "services" | "faq";
+type Tab = "testimonials" | "consultations" | "blog" | "hospitals" | "services" | "tourism" | "faq";
 
 function Dashboard({ password, onLogout }: { password: string; onLogout: () => void }) {
   const [tab, setTab] = useState<Tab>("testimonials");
@@ -102,6 +108,7 @@ function Dashboard({ password, onLogout }: { password: string; onLogout: () => v
     { id: "blog", label: "Blog Posts" },
     { id: "hospitals", label: "Hospitals" },
     { id: "services", label: "Services" },
+    { id: "tourism", label: "Tour Packages" },
     { id: "faq", label: "FAQs" },
   ];
   return (
@@ -133,6 +140,7 @@ function Dashboard({ password, onLogout }: { password: string; onLogout: () => v
         {tab === "blog" && <BlogTab password={password} />}
         {tab === "hospitals" && <HospitalsTab password={password} />}
         {tab === "services" && <ServicesTab password={password} />}
+        {tab === "tourism" && <TourismTab password={password} />}
         {tab === "faq" && <FaqTab password={password} />}
       </main>
     </div>
@@ -922,6 +930,506 @@ function ServicePageEditor({
         <div className="flex items-center gap-3">
           {service.slug && (
             <a href={`/services/${service.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#003265] underline hover:opacity-70">View Live ↗</a>
+          )}
+          <button onClick={onCancel} className="text-sm text-[#5A5A66] hover:text-[#003265]">← Back</button>
+        </div>
+      </div>
+
+      <div className="space-y-6 rounded-2xl border border-[#E2E8F0] bg-white p-8">
+        <label className="block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Page Content Blocks</label>
+
+        <div className="space-y-4">
+          {blocks.map((block, index) => (
+            <div key={index} className="relative rounded-xl border border-[#E2E8F0] bg-[#F8F7F4] p-4 pt-10">
+              <div className="absolute top-2 left-4 right-4 flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-[#003265]">Block {index + 1}: {block.type}</span>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => moveBlock(index, "up")} disabled={index === 0} className="text-xs text-[#5A5A66] hover:text-[#003265] disabled:opacity-30">▲ Up</button>
+                  <button type="button" onClick={() => moveBlock(index, "down")} disabled={index === blocks.length - 1} className="text-xs text-[#5A5A66] hover:text-[#003265] disabled:opacity-30">▼ Down</button>
+                  <button type="button" onClick={() => deleteBlock(index)} className="text-xs text-[#ED1C24] hover:underline">Delete</button>
+                </div>
+              </div>
+
+              {block.type === "paragraph" && (
+                <textarea value={block.value} onChange={(e) => updateBlock(index, { value: e.target.value })} placeholder="Write paragraph text..." rows={4} className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none focus:border-[#003265]" />
+              )}
+              {block.type === "heading" && (
+                <div className="flex gap-2">
+                  <select value={block.level ?? 2} onChange={(e) => updateBlock(index, { level: parseInt(e.target.value) })} className="rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-sm focus:outline-none">
+                    <option value={2}>H2</option><option value={3}>H3</option><option value={4}>H4</option>
+                  </select>
+                  <input type="text" value={block.value} onChange={(e) => updateBlock(index, { value: e.target.value })} placeholder="Heading text" className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none focus:border-[#003265]" />
+                </div>
+              )}
+              {block.type === "image" && (
+                <div className="space-y-2">
+                  <input type="text" value={block.url ?? ""} onChange={(e) => updateBlock(index, { url: e.target.value })} placeholder="Image URL" className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none focus:border-[#003265]" />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[#5A5A66]">— or upload —</span>
+                    <label className="cursor-pointer rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]">
+                      📁 Choose File
+                      <input type="file" accept="image/*" className="sr-only" onChange={async (e) => { const f = e.target.files?.[0]; if (!f) return; const fd = new FormData(); fd.append("image", f); const res = await fetch("/api/upload", { method: "POST", headers: { "x-admin-password": password }, body: fd }); const data = await res.json(); if (data.url) updateBlock(index, { url: data.url }); }} />
+                    </label>
+                    {block.url && <img src={block.url} alt="preview" className="h-10 w-14 rounded object-cover border border-[#E2E8F0]" />}
+                  </div>
+                  <input type="text" value={block.caption ?? ""} onChange={(e) => updateBlock(index, { caption: e.target.value })} placeholder="Caption (optional)" className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none focus:border-[#003265]" />
+                </div>
+              )}
+              {block.type === "video" && (
+                <div className="space-y-2">
+                  <input type="text" value={block.url ?? ""} onChange={(e) => updateBlock(index, { url: e.target.value })} placeholder="Video Embed URL or path" className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none" />
+                </div>
+              )}
+              {block.type === "list" && (
+                <div className="space-y-2">
+                  {block.items.map((item: string, idx: number) => (
+                    <div key={idx} className="flex gap-2">
+                      <input type="text" value={item} onChange={(e) => { const n = [...block.items]; n[idx] = e.target.value; updateBlock(index, { items: n }); }} placeholder={`Item ${idx + 1}`} className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none" />
+                      <button type="button" onClick={() => updateBlock(index, { items: block.items.filter((_: any, i: number) => i !== idx) })} className="text-xs text-[#ED1C24] hover:underline">Remove</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => updateBlock(index, { items: [...block.items, ""] })} className="text-xs font-semibold text-[#003265] hover:underline">+ Add Point</button>
+                </div>
+              )}
+              {block.type === "poll" && (
+                <div className="space-y-2">
+                  <input type="text" value={block.question ?? ""} onChange={(e) => updateBlock(index, { question: e.target.value })} placeholder="Poll Question" className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm font-semibold focus:outline-none" />
+                  {block.options.map((opt: string, idx: number) => (
+                    <div key={idx} className="flex gap-2">
+                      <input type="text" value={opt} onChange={(e) => { const n = [...block.options]; n[idx] = e.target.value; updateBlock(index, { options: n }); }} placeholder={`Option ${idx + 1}`} className="flex-1 rounded-lg border border-[#E2E8F0] bg-white px-4 py-2 text-sm focus:outline-none" />
+                      <button type="button" onClick={() => { const no = block.options.filter((_: any, i: number) => i !== idx); const nv = block.votes.filter((_: any, i: number) => i !== idx); updateBlock(index, { options: no, votes: nv }); }} className="text-xs text-[#ED1C24] hover:underline">Remove</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => updateBlock(index, { options: [...block.options, ""], votes: [...block.votes, 0] })} className="text-xs font-semibold text-[#003265] hover:underline">+ Add Option</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Block toolbar */}
+        <div className="flex flex-wrap gap-2 rounded-xl border border-[#E2E8F0] bg-[#F8F7F4] p-3">
+          <span className="w-full text-[10px] font-bold uppercase tracking-widest text-[#5A5A66] mb-1">Add Block:</span>
+          {["paragraph", "heading", "list", "image", "video", "poll"].map((type) => (
+            <button key={type} type="button" onClick={() => addBlock(type)} className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1 text-xs font-medium text-[#5A5A66] hover:border-[#003265] hover:text-[#003265]">
+              + {type === "paragraph" ? "Text Paragraph" : type === "poll" ? "Interactive Poll" : type.charAt(0).toUpperCase() + type.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {error && <p className="text-sm text-[#ED1C24]">{error}</p>}
+
+        <div className="flex gap-3">
+          <button onClick={save} disabled={saving} className="rounded-full bg-[#003265] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">{saving ? "Saving…" : "Save Page"}</button>
+          <button onClick={onCancel} className="rounded-full border border-[#E2E8F0] px-6 py-2.5 text-sm text-[#5A5A66] hover:border-[#003265]">Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tourism Packages Tab ───────────────────────────────────────────────────────────
+function TourismTab({ password }: { password: string }) {
+  const [packages, setPackages] = useState<TourismPackage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editingPage, setEditingPage] = useState<TourismPackage | null>(null);
+  const [editing, setEditing] = useState<TourismPackage | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [pTitle, setPTitle] = useState("");
+  const [pDesc, setPDesc] = useState("");
+  const [pSlug, setPSlug] = useState("");
+  const [pDuration, setPDuration] = useState("");
+  const [pDestination, setPDestination] = useState("Thailand");
+  const [pPrice, setPPrice] = useState("");
+  const [pImage, setPImage] = useState("");
+  const [pHeroBanner, setPHeroBanner] = useState("");
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [uploadingBanner, setUploadingBanner] = useState(false);
+  const imgRef = useRef<HTMLInputElement>(null);
+  const bannerRef = useRef<HTMLInputElement>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    const res = await fetch("/api/tourism-packages", { headers: { "x-admin-password": password } });
+    const data = await res.json();
+    setPackages(Array.isArray(data) ? data : []);
+    setLoading(false);
+  }, [password]);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openCreate = () => {
+    setPTitle(""); setPDesc(""); setPSlug(""); setPDuration(""); setPDestination("Thailand"); setPPrice("");
+    setPImage(""); setPHeroBanner(""); setEditing(null); setCreating(true);
+  };
+  const openEdit = (p: TourismPackage) => {
+    setPTitle(p.title); setPDesc(p.description ?? ""); setPSlug(p.slug ?? slugify(p.title));
+    setPDuration(p.duration ?? ""); setPDestination(p.destination ?? "Thailand"); setPPrice(p.price ?? "");
+    setPImage(p.image_url ?? ""); setPHeroBanner(p.hero_banner_url ?? "");
+    setEditing(p); setCreating(false);
+  };
+  const cancelForm = () => { setCreating(false); setEditing(null); };
+
+  const handleTitleChange = (val: string) => {
+    setPTitle(val);
+    if (!editing) setPSlug(slugify(val));
+  };
+
+  const handleUpload = async (file: File, type: "image" | "banner") => {
+    if (type === "image") setUploadingImg(true);
+    else setUploadingBanner(true);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "x-admin-password": password },
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        if (type === "image") setPImage(data.url);
+        else setPHeroBanner(data.url);
+      } else {
+        alert(data.error ?? "Upload failed");
+      }
+    } catch {
+      alert("Upload failed. Please try again.");
+    } finally {
+      if (type === "image") setUploadingImg(false);
+      else setUploadingBanner(false);
+    }
+  };
+
+  const save = async () => {
+    if (!pTitle.trim()) return;
+    setSaving(true);
+    const body = {
+      title: pTitle,
+      description: pDesc,
+      slug: pSlug || slugify(pTitle),
+      duration: pDuration,
+      destination: pDestination,
+      price: pPrice,
+      image_url: pImage,
+      hero_banner_url: pHeroBanner,
+      enabled: true,
+      sort_order: packages.length,
+    };
+    if (editing) {
+      await fetch(`/api/tourism-packages/${editing.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify({ ...body, enabled: editing.enabled, page_content: editing.page_content }),
+      });
+    } else {
+      await fetch("/api/tourism-packages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": password },
+        body: JSON.stringify(body),
+      });
+    }
+    setSaving(false); cancelForm(); load();
+  };
+
+  const toggle = async (p: TourismPackage) => {
+    await fetch(`/api/tourism-packages/${p.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-password": password },
+      body: JSON.stringify({ ...p, enabled: !p.enabled }),
+    });
+    load();
+  };
+
+  const move = async (p: TourismPackage, dir: "up" | "down") => {
+    const idx = packages.findIndex((x) => x.id === p.id);
+    if (dir === "up" && idx === 0) return;
+    if (dir === "down" && idx === packages.length - 1) return;
+    const other = packages[dir === "up" ? idx - 1 : idx + 1];
+    await Promise.all([
+      fetch(`/api/tourism-packages/${p.id}`, { method: "PUT", headers: { "Content-Type": "application/json", "x-admin-password": password }, body: JSON.stringify({ ...p, sort_order: other.sort_order }) }),
+      fetch(`/api/tourism-packages/${other.id}`, { method: "PUT", headers: { "Content-Type": "application/json", "x-admin-password": password }, body: JSON.stringify({ ...other, sort_order: p.sort_order }) }),
+    ]);
+    load();
+  };
+
+  const deletePackage = async (id: number) => {
+    if (!confirm("Delete this tour package?")) return;
+    await fetch(`/api/tourism-packages/${id}`, { method: "DELETE", headers: { "x-admin-password": password } });
+    load();
+  };
+
+  if (editingPage) {
+    return (
+      <TourismPackageEditor
+        password={password}
+        pkg={editingPage}
+        onSave={() => { setEditingPage(null); load(); }}
+        onCancel={() => setEditingPage(null)}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="font-semibold text-[#003265]">Tourism Packages</h3>
+          <p className="mt-0.5 text-sm text-[#5A5A66]">Manage medical travel & tour packages shown on the homepage and Tourism page.</p>
+        </div>
+        {!creating && !editing && (
+          <button onClick={openCreate} className="rounded-full bg-[#003265] px-5 py-2 text-sm font-semibold text-white hover:opacity-90">
+            + Add Tour Package
+          </button>
+        )}
+      </div>
+
+      {(creating || editing) && (
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-7 space-y-4">
+          <h4 className="font-semibold text-[#003265]">{editing ? "Edit Tour Package" : "New Tour Package"}</h4>
+          
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Title *</label>
+              <input value={pTitle} onChange={(e) => handleTitleChange(e.target.value)} placeholder="e.g. Bangkok Wellness & Health Retreat" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">
+                Slug <span className="normal-case font-normal text-[#5A5A66]">(URL: /tourism-packages/{pSlug || "…"})</span>
+              </label>
+              <input value={pSlug} onChange={(e) => setPSlug(slugify(e.target.value))} placeholder="bangkok-wellness-retreat" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm font-mono focus:border-[#003265] focus:outline-none" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Destination Country</label>
+              <input value={pDestination} onChange={(e) => setPDestination(e.target.value)} placeholder="e.g. Thailand, India, Singapore" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Duration</label>
+              <input value={pDuration} onChange={(e) => setPDuration(e.target.value)} placeholder="e.g. 5 Days / 4 Nights" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Price / Note</label>
+              <input value={pPrice} onChange={(e) => setPPrice(e.target.value)} placeholder="e.g. From $499 or Custom" className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Short Summary / Card Description</label>
+            <textarea value={pDesc} onChange={(e) => setPDesc(e.target.value)} placeholder="Brief description displayed on the tour card…" rows={2} className="w-full rounded-lg border border-[#E2E8F0] px-4 py-2.5 text-sm focus:border-[#003265] focus:outline-none" />
+          </div>
+
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {/* Card Thumbnail */}
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Card Image (Thumbnail)</label>
+              <div className="flex items-start gap-3">
+                <label className={`group flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-5 py-4 text-center transition-colors ${uploadingImg ? "border-[#003265]/50 bg-[#003265]/5" : "border-[#E2E8F0] hover:border-[#003265]/40 hover:bg-[#F8F7F4]"}`}>
+                  {uploadingImg ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#E2E8F0] border-t-[#003265]" />
+                  ) : (
+                    <>
+                      <span className="text-xs font-medium text-[#5A5A66] group-hover:text-[#003265]">
+                        {pImage ? "Replace image" : "Upload image"}
+                      </span>
+                      <span className="mt-0.5 text-[10px] text-[#5A5A66]">Card display image</span>
+                    </>
+                  )}
+                  <input
+                    ref={imgRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    disabled={uploadingImg}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUpload(file, "image");
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                {pImage && (
+                  <div className="relative">
+                    <img src={pImage} alt="card preview" className="h-20 w-28 rounded-xl border border-[#E2E8F0] object-cover" />
+                    <button type="button" onClick={() => setPImage("")} className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#ED1C24] text-[10px] text-white">×</button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Hero Banner */}
+            <div>
+              <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-[#5A5A66]">Detail Page Hero Banner</label>
+              <div className="flex items-start gap-3">
+                <label className={`group flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-5 py-4 text-center transition-colors ${uploadingBanner ? "border-[#003265]/50 bg-[#003265]/5" : "border-[#E2E8F0] hover:border-[#003265]/40 hover:bg-[#F8F7F4]"}`}>
+                  {uploadingBanner ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#E2E8F0] border-t-[#003265]" />
+                  ) : (
+                    <>
+                      <span className="text-xs font-medium text-[#5A5A66] group-hover:text-[#003265]">
+                        {pHeroBanner ? "Replace banner" : "Upload banner"}
+                      </span>
+                      <span className="mt-0.5 text-[10px] text-[#5A5A66]">Detail page top hero</span>
+                    </>
+                  )}
+                  <input
+                    ref={bannerRef}
+                    type="file"
+                    accept="image/*"
+                    className="sr-only"
+                    disabled={uploadingBanner}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleUpload(file, "banner");
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
+                {pHeroBanner && (
+                  <div className="relative">
+                    <img src={pHeroBanner} alt="banner preview" className="h-20 w-36 rounded-xl border border-[#E2E8F0] object-cover" />
+                    <button type="button" onClick={() => setPHeroBanner("")} className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#ED1C24] text-[10px] text-white">×</button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button onClick={save} disabled={saving || uploadingImg || uploadingBanner} className="rounded-full bg-[#003265] px-6 py-2.5 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50">
+              {saving ? "Saving…" : "Save Tour Package"}
+            </button>
+            <button onClick={cancelForm} className="rounded-full border border-[#E2E8F0] px-6 py-2.5 text-sm text-[#5A5A66] hover:border-[#003265]">
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      {loading ? <Spinner /> : packages.length === 0 ? <Empty text="No tour packages yet." /> : (
+        <div className="space-y-2">
+          {packages.map((p, i) => (
+            <div key={p.id} className="flex items-center gap-4 rounded-xl border border-[#E2E8F0] bg-white px-5 py-4">
+              <div className="flex flex-col gap-0.5">
+                <button onClick={() => move(p, "up")} disabled={i === 0} className="text-[10px] text-[#5A5A66] hover:text-[#003265] disabled:opacity-30">▲</button>
+                <button onClick={() => move(p, "down")} disabled={i === packages.length - 1} className="text-[10px] text-[#5A5A66] hover:text-[#003265] disabled:opacity-30">▼</button>
+              </div>
+
+              {p.image_url && (
+                <img src={p.image_url} alt="" className="h-12 w-16 rounded-lg object-cover border border-[#E2E8F0] shrink-0" />
+              )}
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-medium text-[#003265]">{p.title}</span>
+                  {p.destination && (
+                    <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">
+                      {p.destination}
+                    </span>
+                  )}
+                  {p.duration && (
+                    <span className="text-[11px] text-[#5A5A66]">• {p.duration}</span>
+                  )}
+                  {p.slug && <span className="text-[10px] font-mono text-[#5A5A66]">/tourism-packages/{p.slug}</span>}
+                </div>
+                {p.description && <p className="mt-0.5 text-xs text-[#5A5A66] line-clamp-1">{p.description}</p>}
+              </div>
+
+              <div className="flex shrink-0 items-center gap-3">
+                <button
+                  onClick={() => setEditingPage(p)}
+                  className="rounded-full border border-[#003265]/30 px-3 py-1 text-xs font-medium text-[#003265] hover:bg-[#003265] hover:text-white transition-colors"
+                >
+                  ✏️ Edit Page
+                </button>
+                {p.slug && (
+                  <a href={`/tourism-packages/${p.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-[#003265] underline hover:opacity-70">
+                    View ↗
+                  </a>
+                )}
+                <button onClick={() => toggle(p)} className={`rounded-full px-3 py-1 text-xs font-semibold ${p.enabled ? "bg-[#00B02A]/10 text-[#00B02A]" : "bg-[#E2E8F0] text-[#5A5A66]"}`}>
+                  {p.enabled ? "Visible" : "Hidden"}
+                </button>
+                <button onClick={() => openEdit(p)} className="text-xs text-[#5A5A66] underline hover:text-[#003265]">Edit</button>
+                <button onClick={() => deletePackage(p.id)} className="text-xs text-[#ED1C24] hover:underline">Delete</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Tourism Package Page Editor ──────────────────────────────────────────────
+function TourismPackageEditor({
+  password, pkg, onSave, onCancel,
+}: {
+  password: string; pkg: TourismPackage; onSave: () => void; onCancel: () => void;
+}) {
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [blocks, setBlocks] = useState<any[]>(() => {
+    if (pkg.page_content) {
+      try { const p = JSON.parse(pkg.page_content); if (Array.isArray(p)) return p; } catch { }
+    }
+    return [{ type: "paragraph", value: "" }];
+  });
+
+  const addBlock = (type: string) => {
+    let b: any = { type };
+    if (type === "paragraph") b.value = "";
+    else if (type === "heading") { b.value = ""; b.level = 2; }
+    else if (type === "image") { b.url = ""; b.caption = ""; }
+    else if (type === "video") { b.url = ""; }
+    else if (type === "list") { b.items = [""]; }
+    else if (type === "poll") { b.question = ""; b.options = ["", ""]; b.votes = [0, 0]; }
+    setBlocks([...blocks, b]);
+  };
+
+  const updateBlock = (i: number, fields: any) => {
+    const next = [...blocks]; next[i] = { ...next[i], ...fields }; setBlocks(next);
+  };
+
+  const deleteBlock = (i: number) => {
+    if (blocks.length <= 1) { alert("Must have at least one block."); return; }
+    setBlocks(blocks.filter((_, idx) => idx !== i));
+  };
+
+  const moveBlock = (i: number, dir: "up" | "down") => {
+    if (dir === "up" && i === 0) return;
+    if (dir === "down" && i === blocks.length - 1) return;
+    const ti = dir === "up" ? i - 1 : i + 1;
+    const next = [...blocks]; const tmp = next[i]; next[i] = next[ti]; next[ti] = tmp; setBlocks(next);
+  };
+
+  const save = async () => {
+    setSaving(true); setError("");
+    const res = await fetch(`/api/tourism-packages/${pkg.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", "x-admin-password": password },
+      body: JSON.stringify({ ...pkg, page_content: JSON.stringify(blocks), slug: pkg.slug ?? slugify(pkg.title) }),
+    });
+    const data = await res.json();
+    if (!res.ok) { setError(data.error ?? "Save failed"); setSaving(false); return; }
+    onSave();
+  };
+
+  return (
+    <div>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-[#003265]">Edit Tour Package Page: {pkg.title}</h2>
+          {pkg.slug && <p className="text-xs text-[#5A5A66] mt-0.5">URL: /tourism-packages/{pkg.slug}</p>}
+        </div>
+        <div className="flex items-center gap-3">
+          {pkg.slug && (
+            <a href={`/tourism-packages/${pkg.slug}`} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-[#003265] underline hover:opacity-70">
+              View Live ↗
+            </a>
           )}
           <button onClick={onCancel} className="text-sm text-[#5A5A66] hover:text-[#003265]">← Back</button>
         </div>

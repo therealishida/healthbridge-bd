@@ -128,3 +128,27 @@ INSERT INTO faqs (question, answer, sort_order) VALUES
   ('Is an interpreter available at the hospital?', 'Yes — Bengali and English-speaking interpreters are arranged for every consultation and hospital visit.', 4)
 ON CONFLICT DO NOTHING;
 
+-- ─── Tourism Packages ─────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS tourism_packages (
+  id              SERIAL PRIMARY KEY,
+  title           TEXT NOT NULL,
+  slug            TEXT UNIQUE,
+  description     TEXT,
+  image_url       TEXT,
+  hero_banner_url TEXT,
+  duration        TEXT,
+  destination     TEXT DEFAULT 'Thailand',
+  price           TEXT,
+  page_content    TEXT,           -- JSON block array for tour package detail page
+  enabled         BOOLEAN DEFAULT true,
+  sort_order      INT DEFAULT 0,
+  created_at      TIMESTAMPTZ DEFAULT now()
+);
+
+-- Migrations for existing table
+ALTER TABLE tourism_packages ADD COLUMN IF NOT EXISTS duration TEXT;
+ALTER TABLE tourism_packages ADD COLUMN IF NOT EXISTS destination TEXT DEFAULT 'Thailand';
+ALTER TABLE tourism_packages ADD COLUMN IF NOT EXISTS price TEXT;
+ALTER TABLE tourism_packages ADD COLUMN IF NOT EXISTS hero_banner_url TEXT;
+
+

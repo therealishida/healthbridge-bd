@@ -59,27 +59,19 @@ export default function Contact() {
 
   return (
     <section id="contact" className="border-t border-line/60 bg-surface/40 py-28 md:py-36">
-      <div className="mx-auto max-w-6xl px-6">
+      <div className="mx-auto max-w-4xl px-6">
         <Reveal>
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <h2 className="max-w-xl font-display text-3xl font-medium leading-tight text-primary md:text-5xl">
-                Book a Consultation
-              </h2>
-              <p className="mt-4 max-w-2xl text-ink-muted">
-                Provide your details below and a dedicated coordinator will respond with clear next steps.
-              </p>
-            </div>
-            <div className="rounded-xl border border-alert-orange/30 bg-alert-orange/10 p-5 max-w-sm">
-              <p className="text-sm font-medium text-alert-orange leading-snug">
-                Urgent medical need? <br className="hidden md:block" />
-                <span className="font-bold">Call or WhatsApp +66 65 162 7555</span> directly — skip the form entirely.
-              </p>
-            </div>
+          <div>
+            <h2 className="font-display text-3xl font-medium leading-tight text-primary md:text-5xl">
+              Book a Consultation
+            </h2>
+            <p className="mt-4 text-ink-muted">
+              Provide your details below and a dedicated coordinator will respond with clear next steps.
+            </p>
           </div>
         </Reveal>
 
-        <div className="mt-12 mx-auto max-w-4xl">
+        <div className="mt-12">
           <Reveal delay={0.1}>
             {status === "success" ? (
               <div className="flex h-full min-h-[320px] flex-col items-center justify-center rounded-2xl border border-accent/30 bg-bg p-8 text-center">
